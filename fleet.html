@@ -758,6 +758,49 @@
     if (getServices().length === 0) {
       saveServices(DEFAULT_SERVICES.map(name => ({ id: genId('srvc'), name, active: true })));
     }
+    if (getAssets().length === 0) {
+      const SAMPLE_ASSETS = [
+        // Excavators
+        { serial: 'CAT320-001', description: 'CAT 320 Excavator — Unit 1' },
+        { serial: 'CAT320-002', description: 'CAT 320 Excavator — Unit 2' },
+        { serial: 'KOM390-003', description: 'Komatsu PC390 Excavator — Unit 3' },
+        { serial: 'KOM390-004', description: 'Komatsu PC390 Excavator — Unit 4' },
+        { serial: 'HIT520-005', description: 'Hitachi ZX520 Excavator — Unit 5' },
+        // Cars / Light Vehicles
+        { serial: '1FM5K8D80LGA12301', description: 'Ford F-150 Pickup — Site Supervisor 1' },
+        { serial: '1FM5K8D80LGA12302', description: 'Ford F-150 Pickup — Site Supervisor 2' },
+        { serial: '1GNSKBKC9LR123401', description: 'Chevrolet Tahoe — Operations Manager' },
+        { serial: '1GNSKBKC9LR123402', description: 'Chevrolet Tahoe — Safety Officer' },
+        { serial: 'JTJHY7AX9L4001501', description: 'Toyota Land Cruiser — Field Coordinator' },
+        // Bulldozers
+        { serial: 'CAT-D6-001', description: 'CAT D6 Bulldozer — Unit 1' },
+        { serial: 'CAT-D6-002', description: 'CAT D6 Bulldozer — Unit 2' },
+        { serial: 'KOM-D65-003', description: 'Komatsu D65 Bulldozer — Unit 3' },
+        { serial: 'KOM-D65-004', description: 'Komatsu D65 Bulldozer — Unit 4' },
+        { serial: 'JD-850-005', description: 'John Deere 850K Bulldozer — Unit 5' },
+        // Cranes
+        { serial: 'LBH-LTM1100-001', description: 'Liebherr LTM 1100 Mobile Crane — Unit 1' },
+        { serial: 'LBH-LTM1100-002', description: 'Liebherr LTM 1100 Mobile Crane — Unit 2' },
+        { serial: 'GROVE-GMK4090-003', description: 'Grove GMK4090 All-Terrain Crane — Unit 3' },
+        { serial: 'GROVE-GMK4090-004', description: 'Grove GMK4090 All-Terrain Crane — Unit 4' },
+        { serial: 'TADANO-GR700-005', description: 'Tadano GR-700XL Rough Terrain Crane — Unit 5' }
+      ];
+      const sampleStatuses = ['Onsite', 'Onsite', 'Onsite', 'Deployed', 'Deployed'];
+      SAMPLE_ASSETS.forEach((a, i) => {
+        const asset = {
+          id: genId('ast'),
+          serial: a.serial,
+          description: a.description,
+          registeredBy: null,
+          registeredAt: now()
+        };
+        const assets = getAssets();
+        assets.push(asset);
+        saveAssets(assets);
+        const status = sampleStatuses[i % sampleStatuses.length];
+        upsertState(asset.id, { location: status === 'Deployed' ? 'Site B' : 'Main Yard', status, message: '' });
+      });
+    }
   }
 
   // =========================================================
