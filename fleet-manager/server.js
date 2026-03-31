@@ -1,11 +1,6 @@
 const express = require('express');
 const path    = require('path');
 const os      = require('os');
-const { db, nowISO }  = require('./database');
-
-// Run seed on startup
-require('./database').seedIfEmpty ? require('./database').seedIfEmpty() : null;
-// Re-export seedIfEmpty correctly
 const { seedIfEmpty } = require('./database');
 
 const app  = express();
@@ -35,21 +30,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ─── Start ───────────────────────────────────────────────────────────────────
+// Seed on startup
 seedIfEmpty();
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\nFleet Asset Manager running on port ${PORT}`);
-  console.log(`  Local:   http://localhost:${PORT}`);
+// ─── Start (only when run directly, not when required by tests) ──────────────
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\nFleet Asset Manager running on port ${PORT}`);
+    console.log(`  Local:   http://localhost:${PORT}`);
 
-  // Print LAN IP
-  const nets = os.networkInterfaces();
-  for (const iface of Object.values(nets)) {
-    for (const net of iface) {
-      if (net.family === 'IPv4' && !net.internal) {
-        console.log(`  Network: http://${net.address}:${PORT}  ← share with tablets`);
+    const nets = os.networkInterfaces();
+    for (const iface of Object.values(nets)) {
+      for (const net of iface) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`  Network: http://${net.address}:${PORT}  ← share with tablets`);
+        }
       }
     }
-  }
-  console.log('\nPress Ctrl+C to stop.\n');
-});
+    console.log('\nPress Ctrl+C to stop.\n');
+  });
+}
+
+module.exports = app;

@@ -7,7 +7,8 @@ const crypto   = require('crypto');
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const db = new DatabaseSync(path.join(DATA_DIR, 'fleet.db'));
+const DB_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, 'fleet.db');
+const db = new DatabaseSync(DB_PATH);
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
 

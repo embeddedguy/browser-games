@@ -56,12 +56,12 @@ router.patch('/:id', requireRole('admin'), (req, res) => {
 
 // DELETE /api/users/:id
 router.delete('/:id', requireRole('admin'), (req, res) => {
-  if (req.params.id === req.user.userId) return res.status(400).json({ error: 'Cannot delete your own account' });
+  if (req.params.id === req.user.userId) return res.status(403).json({ error: 'Cannot delete your own account' });
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (user.role === 'admin') {
     const adminCount = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'admin'").get().c;
-    if (adminCount <= 1) return res.status(400).json({ error: 'Cannot delete the last admin account' });
+    if (adminCount <= 1) return res.status(409).json({ error: 'Cannot delete the last admin account' });
   }
   db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
   writeAudit(req.user, 'DELETE_USER', 'user', user.id, { username: user.username });
