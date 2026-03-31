@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Fleet Asset Manager</title>
+  <style>
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:         #1a2744;
+      --navy-light:   #263354;
+      --accent:       #2563eb;
+      --accent-hover: #1d4ed8;
+      --success:      #16a34a;
+      --success-bg:   #dcfce7;
+      --success-text: #166534;
+      --warning:      #d97706;
+      --warning-bg:   #fef9c3;
+      --warning-text: #854d0e;
+      --danger:       #dc2626;
+      --danger-bg:    #fee2e2;
+      --danger-text:  #991b1b;
+      --surface:      #ffffff;
+      --surface-2:    #f8fafc;
+      --border:       #e2e8f0;
+      --text:         #1a1a2e;
+      --text-muted:   #64748b;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* === VIEWS === */
+    .view { display: none; min-height: 100vh; }
+    .view.active { display: block; }
+    #view-login.active { display: flex; }
+
+    /* === HEADER === */
+    .app-header {
+      background: var(--navy);
+      color: #fff;
+      padding: 0 1.25rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      gap: 0.75rem;
+    }
+    .header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+    .header-title { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+    .header-nav { display: flex; gap: 0.4rem; align-items: center; flex-wrap: nowrap; }
+    .header-user { font-size: 0.8rem; color: rgba(255,255,255,0.75); white-space: nowrap; display: none; }
+    @media (min-width: 500px) { .header-user { display: inline; } }
+    .role-chip {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      margin-left: 0.3rem;
+      vertical-align: middle;
+    }
+
+    /* === BUTTONS === */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      min-height: 48px;
+      padding: 0.6rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      text-align: center;
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+      line-height: 1.2;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-primary   { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled)   { background: var(--accent-hover); }
+    .btn-success   { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled)   { background: #15803d; }
+    .btn-danger    { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled)    { background: #b91c1c; }
+    .btn-warning   { background: var(--warning); color: #fff; }
+    .btn-warning:hover:not(:disabled)   { background: #b45309; }
+    .btn-secondary { background: var(--border); color: #374151; }
+    .btn-secondary:hover:not(:disabled) { background: #cbd5e1; }
+    .btn-ghost {
+      background: transparent;
+      color: rgba(255,255,255,0.85);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      min-height: 34px;
+      padding: 0.25rem 0.7rem;
+      font-size: 0.82rem;
+      border-radius: 6px;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.12); }
+    .btn-sm  { min-height: 36px; padding: 0.3rem 0.7rem; font-size: 0.875rem; }
+    .btn-lg  { min-height: 56px; font-size: 1.1rem; width: 100%; }
+    .btn-block { width: 100%; }
+
+    /* === FORMS === */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.35rem;
+    }
+    input[type="text"],
+    input[type="password"],
+    select,
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      font-size: 1rem;
+      font-family: inherit;
+      padding: 0.625rem 0.875rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.875rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+      background: #fff;
+    }
+    textarea { min-height: 76px; resize: vertical; }
+    .error-msg { color: var(--danger); font-size: 0.875rem; font-weight: 500; margin-top: 0.4rem; }
+    .hidden { display: none !important; }
+
+    /* === LOGIN === */
+    #view-login {
+      align-items: center;
+      justify-content: center;
+      background: var(--navy);
+      padding: 1.5rem 1rem;
+    }
+    .login-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    .app-logo { text-align: center; margin-bottom: 2rem; }
+    .app-logo h1 { font-size: 1.65rem; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
+    .app-logo p  { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.3rem; }
+    .login-hint  { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 1.1rem; }
+
+    /* === VIEW BODY === */
+    .view-body { padding: 1rem; }
+
+    /* === PAGE HEADING === */
+    .page-heading { font-size: 1.15rem; font-weight: 700; color: var(--navy); padding: 1.1rem 1rem 0.25rem; }
+    .page-subheading { font-size: 0.875rem; color: var(--text-muted); padding: 0 1rem 0.85rem; }
+
+    /* === ASSET LIST === */
+    .asset-grid { padding: 0 1rem 4rem; }
+    .asset-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 1.1rem 1.1rem 1rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.1s;
+      border: 1.5px solid transparent;
+    }
+    .asset-card:hover  { box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-color: var(--border); }
+    .asset-card:active { transform: scale(0.99); }
+    .asset-card-info { flex: 1; min-width: 0; }
+    .asset-serial  { font-size: 1rem; font-weight: 700; color: var(--navy); }
+    .asset-desc    { font-size: 0.875rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-meta    { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
+    .asset-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
+
+    /* === STATUS BADGES === */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .badge-Onsite   { background: var(--success-bg); color: var(--success-text); }
+    .badge-Deployed { background: var(--warning-bg); color: var(--warning-text); }
+    .badge-Disabled { background: var(--danger-bg);  color: var(--danger-text);  }
+
+    /* === EMPTY STATE === */
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .empty-state h3 { font-size: 1.05rem; color: #374151; margin-bottom: 0.35rem; }
+
+    /* === ASSET DETAIL === */
+    .detail-banner {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .detail-serial { font-size: 1.2rem; font-weight: 800; color: var(--navy); }
+    .detail-desc   { font-size: 0.875rem; color: var(--text-muted); margin-top: 3px; }
+    .detail-meta   { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+    .detail-right  { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; flex-shrink: 0; }
+
+    .section-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .action-btns { display: flex; flex-direction: column; gap: 0.75rem; }
+    @media (min-width: 600px) {
+      .action-btns { flex-direction: row; flex-wrap: wrap; }
+      .action-btns .btn { flex: 1; min-width: 150px; }
+    }
+
+    /* === SERVICE SEARCH === */
+    .service-search-wrap { position: relative; }
+    .service-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 230px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+    }
+    .service-dropdown.open { display: block; }
+    .service-dropdown li {
+      list-style: none;
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.1s;
+    }
+    .service-dropdown li:last-child { border-bottom: none; }
+    .service-dropdown li:hover { background: #eff6ff; color: var(--accent); }
+    .service-dropdown li.no-results { color: var(--text-muted); cursor: default; font-style: italic; font-size: 0.875rem; }
+    .service-dropdown li.no-results:hover { background: none; color: var(--text-muted); }
+    .selected-service-label {
+      font-size: 0.875rem;
+      color: var(--success-text);
+      font-weight: 600;
+      margin-top: 0.4rem;
+      min-height: 1.2rem;
+    }
+
+    /* === SERVICE LOG === */
+    .log-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    .log-service { font-weight: 600; font-size: 0.95rem; }
+    .log-meta    { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+    .log-time    { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; text-align: right; flex-shrink: 0; }
+
+    /* === TOAST === */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      z-index: 9999;
+      pointer-events: none;
+      white-space: nowrap;
+      max-width: calc(100vw - 2rem);
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      transition: opacity 0.4s;
+    }
+    .toast-success { background: #16a34a; color: #fff; }
+    .toast-error   { background: #dc2626; color: #fff; }
+    .toast-info    { background: #2563eb; color: #fff; }
+
+    /* === ADMIN VIEWS === */
+    .admin-content { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .admin-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+
+    .card { background: var(--surface); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 1.5rem; }
+    .card-header { padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.95rem; color: var(--navy); }
+    .card-body   { padding: 1.25rem; }
+
+    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 150px; }
+    .form-inline { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+    .form-inline .form-group { flex: 1; min-width: 200px; margin-bottom: 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead th {
+      background: var(--surface-2);
+      text-align: left;
+      padding: 0.65rem 0.875rem;
+      border-bottom: 2px solid var(--border);
+      font-weight: 700;
+      color: #374151;
+      white-space: nowrap;
+    }
+    tbody td { padding: 0.6rem 0.875rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tbody tr:hover td { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .tbl-overflow { overflow-x: auto; }
+    .row-actions { display: flex; gap: 0.4rem; flex-wrap: nowrap; }
+
+    .svc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      gap: 0.75rem;
+    }
+    .svc-item:last-child { border-bottom: none; }
+    .svc-name { font-weight: 500; font-size: 0.95rem; }
+    .svc-removed { color: var(--text-muted); text-decoration: line-through; font-size: 0.875rem; }
+
+    details summary { cursor: pointer; color: var(--text-muted); font-size: 0.875rem; user-select: none; padding: 0.5rem 0; }
+    details summary:hover { color: var(--text); }
+
+    @media (min-width: 768px) {
+      .view-body   { padding: 1.5rem; }
+      .asset-grid  { padding: 0 1.5rem 3rem; }
+      .page-heading    { padding: 1.5rem 1.5rem 0.25rem; }
+      .page-subheading { padding: 0 1.5rem 1rem; }
+    }
+    @media (min-width: 1024px) {
+      .asset-grid-inner {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+        gap: 0.85rem;
+      }
+      .asset-grid-inner .asset-card { margin-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast (always in DOM) -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ============================================================ -->
+  <!-- LOGIN                                                         -->
+  <!-- ============================================================ -->
+  <div id="view-login" class="view">
+    <div class="login-card">
+      <div class="app-logo">
+        <h1>Fleet Asset Manager</h1>
+        <p>Operations Asset Tracking System</p>
+      </div>
+      <form id="form-login" novalidate>
+        <div class="form-group">
+          <label for="inp-username">Username</label>
+          <input id="inp-username" type="text" autocomplete="username" placeholder="Enter username" inputmode="text">
+        </div>
+        <div class="form-group">
+          <label for="inp-password">Password</label>
+          <input id="inp-password" type="password" autocomplete="current-password" placeholder="Enter password">
+        </div>
+        <div id="login-error" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-lg" style="margin-top:0.5rem">Sign In</button>
+      </form>
+      <p class="login-hint">Default credentials: admin / admin123</p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DASHBOARD                                                     -->
+  <!-- ============================================================ -->
+  <div id="view-dashboard" class="view">
+    <header class="app-header" id="hdr-dashboard"></header>
+    <div class="page-heading">All Assets</div>
+    <div id="dash-subheading" class="page-subheading"></div>
+    <div class="asset-grid">
+      <div id="asset-grid-inner" class="asset-grid-inner"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ASSET DETAIL                                                  -->
+  <!-- ============================================================ -->
+  <div id="view-asset-detail" class="view">
+    <header class="app-header" id="hdr-asset-detail"></header>
+    <div id="detail-banner" class="detail-banner"></div>
+    <div class="view-body">
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ADMIN: USERS                                                  -->
+  <!-- ============================================================ -->
+  <div id="view-admin-users" class="view">
+    <header class="app-header" id="hdr-admin-users"></header>
+    <div class="admin-content" id="admin-users-content"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ADMIN: ASSETS                                                 -->
+  <!-- ============================================================ -->
+  <div id="view-admin-assets" class="view">
+    <header class="app-header" id="hdr-admin-assets"></header>
+    <div class="admin-content" id="admin-assets-content"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ADMIN: SERVICES                                               -->
+  <!-- ============================================================ -->
+  <div id="view-admin-services" class="view">
+    <header class="app-header" id="hdr-admin-services"></header>
+    <div class="admin-content" id="admin-services-content"></div>
+  </div>
+
+  <script>
+  // SECURITY NOTE: All data is stored in localStorage (client-side only).
+  // No real server-side authentication. Intended for local operational use only.
+  // Do not expose on a public network.
+
+  // =========================================================
+  // A — CONSTANTS & CONFIG
+  // =========================================================
+  const ROLES = { ADMIN: 'admin', SUPERVISOR: 'supervisor', TECH: 'tech', USER: 'user' };
+  const ROLE_LABELS = { admin: 'Admin', supervisor: 'Supervisor', tech: 'Technician', user: 'User' };
+  const STATUSES = ['Onsite', 'Deployed', 'Disabled'];
+
+  const SK = {
+    USERS:    'fleet_users',
+    ASSETS:   'fleet_assets',
+    STATES:   'fleet_asset_states',
+    LOG:      'fleet_service_log',
+    SERVICES: 'fleet_services',
+    SESSION:  'fleet_session'
+  };
+
+  const DEFAULT_SERVICES = [
+    'Oil & Filter Change',
+    'Air Filter Replacement',
+    'Fuel Filter Replacement',
+    'Hydraulic Oil & Filter Change',
+    'Coolant Flush & Fill',
+    'Battery Inspection & Replacement',
+    'Tire Inspection & Rotation',
+    'Brake Inspection & Service',
+    'Engine Tune-Up',
+    'Transmission Service',
+    'Drive Belt Replacement',
+    'Undercarriage Inspection & Cleaning',
+    'Greasing & Lubrication',
+    'Track Tension Adjustment',
+    'Bucket/Attachment Inspection',
+    'Electrical System Diagnosis & Repair',
+    'Pre-Delivery Inspection (PDI)',
+    'Annual Safety Inspection',
+    'Welding & Structural Repair',
+    'Emissions Test & Service'
+  ];
+
+  // =========================================================
+  // B — UTILITIES
+  // =========================================================
+  function genId(prefix) {
+    return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  }
+
+  // Simple djb2 hash — no external deps, sync
+  function hashPassword(str) {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & hash; // to 32-bit int
+    }
+    return (hash >>> 0).toString(16);
+  }
+
+  function now() { return new Date().toISOString(); }
+
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+         + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function sanitize(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#39;');
+  }
+
+  // =========================================================
+  // C — STORAGE LAYER
+  // =========================================================
+  function sGet(key)    { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+  function sSet(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch(e) { console.error('localStorage error', e); } }
+  function sGetObj(key) { try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; } }
+  function sRemove(key) { try { localStorage.removeItem(key); } catch {} }
+
+  // ---- Users ----
+  function getUsers()             { return sGet(SK.USERS); }
+  function saveUsers(arr)         { sSet(SK.USERS, arr); }
+  function getUserById(id)        { return getUsers().find(u => u.id === id) || null; }
+  function getUserByUsername(un)  { return getUsers().find(u => u.username.toLowerCase() === un.toLowerCase()) || null; }
+
+  function addUser({ username, password, displayName, role }) {
+    const users = getUsers();
+    if (!username || !password || !displayName) throw new Error('All fields are required');
+    if (getUserByUsername(username)) throw new Error('Username already exists');
+    const user = { id: genId('usr'), username: username.trim(), passwordHash: hashPassword(password), displayName: displayName.trim(), role };
+    users.push(user);
+    saveUsers(users);
+    return user;
+  }
+
+  function updateUser(id, changes) {
+    const users = getUsers();
+    const idx = users.findIndex(u => u.id === id);
+    if (idx === -1) throw new Error('User not found');
+    if (changes.password) {
+      changes.passwordHash = hashPassword(changes.password);
+      delete changes.password;
+    }
+    users[idx] = { ...users[idx], ...changes };
+    saveUsers(users);
+    return users[idx];
+  }
+
+  function deleteUser(id) {
+    const users = getUsers();
+    const target = users.find(u => u.id === id);
+    if (!target) throw new Error('User not found');
+    const adminCount = users.filter(u => u.role === ROLES.ADMIN).length;
+    if (target.role === ROLES.ADMIN && adminCount <= 1) throw new Error('Cannot delete the last admin account');
+    saveUsers(users.filter(u => u.id !== id));
+  }
+
+  // ---- Assets ----
+  function getAssets()              { return sGet(SK.ASSETS); }
+  function saveAssets(arr)          { sSet(SK.ASSETS, arr); }
+  function getAssetById(id)         { return getAssets().find(a => a.id === id) || null; }
+  function getAssetBySerial(serial) { return getAssets().find(a => a.serial.toLowerCase() === serial.toLowerCase()) || null; }
+
+  function addAsset({ serial, description }) {
+    if (!serial || !description) throw new Error('Both fields are required');
+    if (getAssetBySerial(serial.trim())) throw new Error('Serial/VIN already registered');
+    const sess = getSession();
+    const asset = {
+      id: genId('ast'),
+      serial: serial.trim(),
+      description: description.trim(),
+      registeredBy: sess ? sess.userId : null,
+      registeredAt: now()
+    };
+    const assets = getAssets();
+    assets.push(asset);
+    saveAssets(assets);
+    // Initialize default state
+    upsertState(asset.id, { location: '', status: 'Onsite', message: '' });
+    return asset;
+  }
+
+  // ---- Asset States ----
+  function getStates()              { return sGet(SK.STATES); }
+  function saveStates(arr)          { sSet(SK.STATES, arr); }
+  function getStateByAssetId(id)    { return getStates().find(s => s.assetId === id) || null; }
+
+  function upsertState(assetId, changes) {
+    const states = getStates();
+    const sess = getSession();
+    const idx = states.findIndex(s => s.assetId === assetId);
+    const base = idx !== -1 ? states[idx] : { assetId, location: '', status: 'Onsite', message: '' };
+    const updated = {
+      ...base,
+      ...changes,
+      lastUpdatedBy: sess ? sess.userId : null,
+      lastUpdatedAt: now()
+    };
+    if (idx !== -1) states[idx] = updated; else states.push(updated);
+    saveStates(states);
+    return updated;
+  }
+
+  // ---- Service Log ----
+  function getServiceLog() { return sGet(SK.LOG); }
+
+  function addLogEntry({ assetId, serviceId, serviceName, notes }) {
+    const sess = getSession();
+    const entry = {
+      id: genId('log'),
+      assetId,
+      serviceId,
+      serviceName,
+      techId:   sess ? sess.userId      : null,
+      techName: sess ? sess.displayName : 'Unknown',
+      timestamp: now(),
+      notes: notes || ''
+    };
+    const log = getServiceLog();
+    log.push(entry);
+    sSet(SK.LOG, log);
+    return entry;
+  }
+
+  function getLogForAsset(assetId) {
+    return getServiceLog()
+      .filter(e => e.assetId === assetId)
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  }
+
+  // ---- Services ----
+  function getServices()      { return sGet(SK.SERVICES); }
+  function saveServices(arr)  { sSet(SK.SERVICES, arr); }
+  function getActiveServices(){ return getServices().filter(s => s.active); }
+
+  function addService(name) {
+    if (!name) throw new Error('Service name is required');
+    const services = getServices();
+    if (services.find(s => s.name.toLowerCase() === name.toLowerCase() && s.active)) {
+      throw new Error('A service with that name already exists');
+    }
+    const svc = { id: genId('srvc'), name: name.trim(), active: true };
+    services.push(svc);
+    saveServices(services);
+    return svc;
+  }
+
+  function deactivateService(id) {
+    const services = getServices();
+    const idx = services.findIndex(s => s.id === id);
+    if (idx !== -1) { services[idx].active = false; saveServices(services); }
+  }
+
+  function reactivateService(id) {
+    const services = getServices();
+    const idx = services.findIndex(s => s.id === id);
+    if (idx !== -1) { services[idx].active = true; saveServices(services); }
+  }
+
+  // ---- Session ----
+  function getSession()      { return sGetObj(SK.SESSION); }
+  function setSession(user)  {
+    sSet(SK.SESSION, {
+      userId: user.id, username: user.username,
+      displayName: user.displayName, role: user.role,
+      loginAt: now()
+    });
+  }
+  function clearSession()    { sRemove(SK.SESSION); }
+  function requireSession()  { if (!getSession()) { showView('login'); return false; } return true; }
+  function hasRole(...roles) { const s = getSession(); return s && roles.includes(s.role); }
+
+  // =========================================================
+  // D — SEED DATA
+  // =========================================================
+  function seedIfEmpty() {
+    if (getUsers().length === 0) {
+      // Bootstrap: call saveUsers directly since addUser needs session
+      const admin = {
+        id: genId('usr'),
+        username: 'admin',
+        passwordHash: hashPassword('admin123'),
+        displayName: 'Administrator',
+        role: ROLES.ADMIN
+      };
+      saveUsers([admin]);
+    }
+    if (getServices().length === 0) {
+      saveServices(DEFAULT_SERVICES.map(name => ({ id: genId('srvc'), name, active: true })));
+    }
+  }
+
+  // =========================================================
+  // E — ROUTER
+  // =========================================================
+  const ALL_VIEWS = ['login','dashboard','asset-detail','admin-users','admin-assets','admin-services'];
+  let currentView   = 'login';
+  let currentParams = {};
+
+  function showView(viewId, params = {}) {
+    ALL_VIEWS.forEach(v => {
+      const el = document.getElementById('view-' + v);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById('view-' + viewId);
+    if (!target) return;
+    target.classList.add('active');
+    currentView   = viewId;
+    currentParams = params;
+    window.scrollTo(0, 0);
+
+    const map = {
+      'login':          renderLogin,
+      'dashboard':      renderDashboard,
+      'asset-detail':   () => renderAssetDetail(params),
+      'admin-users':    renderAdminUsers,
+      'admin-assets':   renderAdminAssets,
+      'admin-services': renderAdminServices
+    };
+    if (map[viewId]) map[viewId]();
+  }
+
+  // =========================================================
+  // L — SHARED HELPERS
+  // =========================================================
+  function statusBadge(status) {
+    const s = sanitize(status || 'Onsite');
+    return `<span class="badge badge-${s}">${s}</span>`;
+  }
+
+  let _toastTimer = null;
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.className = `toast toast-${type}`;
+    el.textContent = msg;
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+  }
+
+  function renderHeader(containerId, title, showAdminNav) {
+    const sess = getSession();
+    if (!sess) return;
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    const adminNav = showAdminNav ? `
+      <button class="btn btn-ghost" data-nav="admin-users">Users</button>
+      <button class="btn btn-ghost" data-nav="admin-assets">Assets</button>
+      <button class="btn btn-ghost" data-nav="admin-services">Services</button>
+    ` : '';
+
+    el.innerHTML = `
+      <div class="header-left">
+        <span class="header-title">${sanitize(title)}</span>
+      </div>
+      <div class="header-nav">
+        ${adminNav}
+        <span class="header-user">${sanitize(sess.displayName)}<span class="role-chip">${sanitize(ROLE_LABELS[sess.role] || sess.role)}</span></span>
+        <button class="btn btn-ghost" id="btn-logout">Logout</button>
+      </div>
+    `;
+
+    el.querySelector('#btn-logout').addEventListener('click', () => {
+      clearSession();
+      showView('login');
+    });
+
+    if (showAdminNav) {
+      el.querySelectorAll('[data-nav]').forEach(btn => {
+        btn.addEventListener('click', () => showView(btn.dataset.nav));
+      });
+    }
+  }
+
+  // =========================================================
+  // F — LOGIN
+  // =========================================================
+  function renderLogin() {
+    clearSession();
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('inp-username').value = '';
+    document.getElementById('inp-password').value = '';
+
+    const form = document.getElementById('form-login');
+    form.onsubmit = e => {
+      e.preventDefault();
+      const username = document.getElementById('inp-username').value.trim();
+      const password = document.getElementById('inp-password').value;
+      const errEl   = document.getElementById('login-error');
+      const user    = getUserByUsername(username);
+      if (!user || user.passwordHash !== hashPassword(password)) {
+        errEl.textContent = 'Invalid username or password.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      errEl.classList.add('hidden');
+      setSession(user);
+      showView('dashboard');
+    };
+  }
+
+  // =========================================================
+  // G — DASHBOARD
+  // =========================================================
+  function renderDashboard() {
+    if (!requireSession()) return;
+    const sess    = getSession();
+    const isAdmin = sess.role === ROLES.ADMIN;
+    renderHeader('hdr-dashboard', 'Fleet Asset Manager', isAdmin);
+
+    const assets = getAssets();
+    const states = getStates();
+
+    document.getElementById('dash-subheading').textContent =
+      `${assets.length} asset${assets.length !== 1 ? 's' : ''} registered`;
+
+    const inner = document.getElementById('asset-grid-inner');
+
+    if (assets.length === 0) {
+      inner.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🚧</div>
+          <h3>No assets registered yet</h3>
+          <p>${isAdmin ? 'Use Admin → Assets to register equipment.' : 'Ask an admin to register assets.'}</p>
+        </div>`;
+      return;
+    }
+
+    inner.innerHTML = assets.map(asset => {
+      const st = states.find(s => s.assetId === asset.id) || { status: 'Onsite', location: '', message: '' };
+      const loc = st.location ? sanitize(st.location) : '<em style="color:var(--text-muted)">No location</em>';
+      return `
+        <div class="asset-card" data-id="${sanitize(asset.id)}">
+          <div class="asset-card-info">
+            <div class="asset-serial">${sanitize(asset.serial)}</div>
+            <div class="asset-desc">${sanitize(asset.description)}</div>
+            <div class="asset-meta">${loc}${st.message ? ' &middot; ' + sanitize(st.message) : ''}</div>
+          </div>
+          <div class="asset-card-right">
+            ${statusBadge(st.status)}
+            <span style="font-size:0.8rem;color:var(--text-muted);">View &rsaquo;</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    inner.querySelectorAll('.asset-card').forEach(card => {
+      card.addEventListener('click', () => showView('asset-detail', { assetId: card.dataset.id }));
+    });
+  }
+
+  // =========================================================
+  // H — ASSET DETAIL
+  // =========================================================
+  function renderAssetDetail({ assetId }) {
+    if (!requireSession()) return;
+    const sess     = getSession();
+    const isAdmin  = sess.role === ROLES.ADMIN;
+    const canTech  = hasRole(ROLES.TECH, ROLES.SUPERVISOR, ROLES.ADMIN);
+    const canRelease = hasRole(ROLES.SUPERVISOR, ROLES.ADMIN);
+
+    renderHeader('hdr-asset-detail', 'Asset Detail', isAdmin);
+
+    const asset = getAssetById(assetId);
+    if (!asset) { showView('dashboard'); return; }
+
+    const state       = getStateByAssetId(assetId) || { status: 'Onsite', location: '', message: '' };
+    const lastUpdater = state.lastUpdatedBy ? getUserById(state.lastUpdatedBy) : null;
+    const inWorkshop  = state.status === 'Disabled' || state.location === 'Workshop';
+
+    // Banner
+    document.getElementById('detail-banner').innerHTML = `
+      <div>
+        <div class="detail-serial">${sanitize(asset.serial)}</div>
+        <div class="detail-desc">${sanitize(asset.description)}</div>
+        ${asset.registeredAt ? `<div class="detail-meta">Registered ${fmtDate(asset.registeredAt)}</div>` : ''}
+      </div>
+      <div class="detail-right">
+        ${statusBadge(state.status)}
+        ${state.lastUpdatedAt
+          ? `<span class="detail-meta">Updated ${fmtDateTime(state.lastUpdatedAt)}${lastUpdater ? ' by ' + sanitize(lastUpdater.displayName) : ''}</span>`
+          : ''}
+      </div>
+    `;
+
+    const statusOpts = STATUSES.map(s =>
+      `<option value="${s}" ${state.status === s ? 'selected' : ''}>${s}</option>`
+    ).join('');
+
+    // Workshop section (tech, supervisor, admin)
+    const workshopSection = canTech ? `
+      <div class="section-card">
+        <div class="section-title">Workshop Actions</div>
+        <div class="action-btns">
+          <button class="btn btn-warning" id="btn-workshop">Sign into Workshop</button>
+          <button class="btn btn-danger"  id="btn-disable">Set Disabled</button>
+          ${canRelease ? `<button class="btn btn-success" id="btn-release" ${!inWorkshop ? 'disabled' : ''}>Release from Workshop</button>` : ''}
+        </div>
+        ${state.location === 'Workshop' ? `<p style="margin-top:0.85rem;font-size:0.875rem;color:var(--warning-text);font-weight:600;">&#9888; Currently in workshop</p>` : ''}
+      </div>
+    ` : '';
+
+    // Service log section (tech, supervisor, admin)
+    const logSection = canTech ? `
+      <div class="section-card">
+        <div class="section-title">Log a Service</div>
+        <div class="form-group">
+          <label>Service Performed</label>
+          <div class="service-search-wrap">
+            <input type="text" id="svc-search-inp" placeholder="Type to search services…" autocomplete="off">
+            <ul class="service-dropdown" id="svc-dropdown"></ul>
+          </div>
+          <div id="svc-selected-label" class="selected-service-label"></div>
+          <input type="hidden" id="svc-selected-id">
+          <input type="hidden" id="svc-selected-name">
+        </div>
+        <div class="form-group">
+          <label for="svc-notes">Notes <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <textarea id="svc-notes" rows="2" placeholder="Any additional details…"></textarea>
+        </div>
+        <button class="btn btn-primary" id="btn-log-svc">Log Service Entry</button>
+      </div>
+    ` : '';
+
+    // Service history (all roles)
+    const logEntries = getLogForAsset(assetId);
+    const historyHtml = logEntries.length === 0
+      ? '<p style="color:var(--text-muted);font-size:0.875rem;">No service history recorded yet.</p>'
+      : logEntries.map(e => `
+          <div class="log-entry">
+            <div>
+              <div class="log-service">${sanitize(e.serviceName)}</div>
+              <div class="log-meta">By ${sanitize(e.techName)}${e.notes ? ' &middot; ' + sanitize(e.notes) : ''}</div>
+            </div>
+            <div class="log-time">${fmtDateTime(e.timestamp)}</div>
+          </div>`).join('');
+
+    const content = document.getElementById('detail-content');
+    content.innerHTML = `
+      <button class="btn btn-secondary btn-sm" id="btn-back" style="margin-bottom:1rem">&larr; Back to Assets</button>
+
+      <div class="section-card">
+        <div class="section-title">Asset Attributes</div>
+        <div class="form-group">
+          <label for="inp-location">Current Location</label>
+          <input type="text" id="inp-location" value="${sanitize(state.location)}" placeholder="e.g. Yard A, Site B, Workshop">
+        </div>
+        <div class="form-group">
+          <label for="inp-status">Status</label>
+          <select id="inp-status">${statusOpts}</select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label for="inp-message">Message</label>
+          <input type="text" id="inp-message" value="${sanitize(state.message)}" placeholder="Optional operational note">
+        </div>
+        <button class="btn btn-primary" id="btn-save" style="margin-top:1rem">Save Changes</button>
+      </div>
+
+      ${workshopSection}
+      ${logSection}
+
+      <div class="section-card">
+        <div class="section-title">Service History (${logEntries.length})</div>
+        ${historyHtml}
+      </div>
+    `;
+
+    // Back
+    content.querySelector('#btn-back').addEventListener('click', () => showView('dashboard'));
+
+    // Save attributes
+    content.querySelector('#btn-save').addEventListener('click', () => {
+      const location = document.getElementById('inp-location').value.trim();
+      const status   = document.getElementById('inp-status').value;
+      const message  = document.getElementById('inp-message').value.trim();
+      upsertState(assetId, { location, status, message });
+      showToast('Asset updated successfully');
+      renderAssetDetail({ assetId });
+    });
+
+    // Workshop actions
+    if (canTech) {
+      content.querySelector('#btn-workshop').addEventListener('click', () => {
+        if (!confirm('Sign this asset into the workshop?\nLocation will be set to "Workshop" and status to "Disabled".')) return;
+        upsertState(assetId, { location: 'Workshop', status: 'Disabled' });
+        showToast('Asset signed into workshop');
+        renderAssetDetail({ assetId });
+      });
+
+      content.querySelector('#btn-disable').addEventListener('click', () => {
+        if (!confirm('Set this asset to Disabled?')) return;
+        upsertState(assetId, { status: 'Disabled' });
+        showToast('Asset set to Disabled');
+        renderAssetDetail({ assetId });
+      });
+
+      if (canRelease) {
+        const releaseBtn = content.querySelector('#btn-release');
+        if (releaseBtn && inWorkshop) {
+          releaseBtn.addEventListener('click', () => {
+            if (!confirm('Release this asset from the workshop?\nStatus will be set to Onsite.')) return;
+            upsertState(assetId, { location: '', status: 'Onsite' });
+            showToast('Asset released from workshop');
+            renderAssetDetail({ assetId });
+          });
+        }
+      }
+
+      // Service search
+      initServiceSearch();
+
+      content.querySelector('#btn-log-svc').addEventListener('click', () => {
+        const serviceId   = document.getElementById('svc-selected-id').value;
+        const serviceName = document.getElementById('svc-selected-name').value;
+        const notes       = document.getElementById('svc-notes').value.trim();
+        if (!serviceId) { showToast('Please select a service first', 'error'); return; }
+        addLogEntry({ assetId, serviceId, serviceName, notes });
+        showToast('Service logged successfully');
+        renderAssetDetail({ assetId });
+      });
+    }
+  }
+
+  function initServiceSearch() {
+    const inp      = document.getElementById('svc-search-inp');
+    const dropdown = document.getElementById('svc-dropdown');
+    const hidId    = document.getElementById('svc-selected-id');
+    const hidName  = document.getElementById('svc-selected-name');
+    const label    = document.getElementById('svc-selected-label');
+    if (!inp) return;
+
+    function rebuild(filter) {
+      const svcs = getActiveServices();
+      const list  = filter ? svcs.filter(s => s.name.toLowerCase().includes(filter.toLowerCase())) : svcs;
+      if (list.length === 0) {
+        dropdown.innerHTML = '<li class="no-results">No matching services</li>';
+      } else {
+        dropdown.innerHTML = list.map(s =>
+          `<li data-id="${sanitize(s.id)}" data-name="${sanitize(s.name)}">${sanitize(s.name)}</li>`
+        ).join('');
+        dropdown.querySelectorAll('li[data-id]').forEach(li => {
+          li.addEventListener('mousedown', e => {
+            e.preventDefault(); // prevent blur before click fires
+            hidId.value   = li.dataset.id;
+            hidName.value = li.dataset.name;
+            inp.value     = li.dataset.name;
+            label.textContent = '✓ ' + li.dataset.name;
+            dropdown.classList.remove('open');
+          });
+        });
+      }
+      dropdown.classList.add('open');
+    }
+
+    inp.addEventListener('input',  () => rebuild(inp.value));
+    inp.addEventListener('focus',  () => rebuild(inp.value));
+    inp.addEventListener('blur',   () => setTimeout(() => dropdown.classList.remove('open'), 150));
+  }
+
+  // =========================================================
+  // I — ADMIN: USERS
+  // =========================================================
+  function renderAdminUsers() {
+    if (!requireSession()) return;
+    if (!hasRole(ROLES.ADMIN)) { showView('dashboard'); return; }
+    renderHeader('hdr-admin-users', 'User Management', true);
+
+    const sess  = getSession();
+    const users = getUsers();
+    const el    = document.getElementById('admin-users-content');
+
+    el.innerHTML = `
+      <div class="admin-header">
+        <h2>Users (${users.length})</h2>
+        <button class="btn btn-secondary btn-sm" id="btn-back-users">&larr; Dashboard</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Add New User</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label>Username</label><input type="text" id="nu-username" placeholder="e.g. jsmith"></div>
+            <div class="form-group"><label>Display Name</label><input type="text" id="nu-name" placeholder="Full name"></div>
+            <div class="form-group"><label>Password</label><input type="password" id="nu-pass" placeholder="Password"></div>
+            <div class="form-group">
+              <label>Role</label>
+              <select id="nu-role">
+                <option value="user">User</option>
+                <option value="tech">Technician</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <div id="add-user-err" class="error-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-add-user" style="margin-top:0.5rem">Add User</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">All Users</div>
+        <div class="tbl-overflow">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Display Name</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${users.map(u => `
+                <tr>
+                  <td><strong>${sanitize(u.username)}</strong>${u.id === sess.userId ? ' <span style="font-size:0.75rem;color:var(--accent)">(you)</span>' : ''}</td>
+                  <td>${sanitize(u.displayName)}</td>
+                  <td><span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:0.7rem">${sanitize(ROLE_LABELS[u.role] || u.role)}</span></td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="btn btn-secondary btn-sm btn-edit" data-uid="${sanitize(u.id)}">Edit</button>
+                      <button class="btn btn-danger btn-sm btn-del" data-uid="${sanitize(u.id)}" ${u.id === sess.userId ? 'disabled title="Cannot delete your own account"' : ''}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="edit-row hidden" id="erow-${sanitize(u.id)}">
+                  <td colspan="4" style="background:var(--surface-2);padding:1rem 1.25rem">
+                    <div class="form-row">
+                      <div class="form-group"><label>Display Name</label><input type="text" id="en-${sanitize(u.id)}" value="${sanitize(u.displayName)}"></div>
+                      <div class="form-group"><label>New Password <span style="font-weight:400;color:var(--text-muted)">(blank = keep)</span></label><input type="password" id="ep-${sanitize(u.id)}" placeholder="New password"></div>
+                      <div class="form-group">
+                        <label>Role</label>
+                        <select id="er-${sanitize(u.id)}">
+                          <option value="user"       ${u.role==='user'       ?'selected':''}>User</option>
+                          <option value="tech"       ${u.role==='tech'       ?'selected':''}>Technician</option>
+                          <option value="supervisor" ${u.role==='supervisor' ?'selected':''}>Supervisor</option>
+                          <option value="admin"      ${u.role==='admin'      ?'selected':''}>Admin</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+                      <button class="btn btn-primary btn-sm btn-save-edit" data-uid="${sanitize(u.id)}">Save</button>
+                      <button class="btn btn-secondary btn-sm btn-cancel-edit" data-uid="${sanitize(u.id)}">Cancel</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    el.querySelector('#btn-back-users').addEventListener('click', () => showView('dashboard'));
+
+    el.querySelector('#btn-add-user').addEventListener('click', () => {
+      const username    = document.getElementById('nu-username').value.trim();
+      const displayName = document.getElementById('nu-name').value.trim();
+      const password    = document.getElementById('nu-pass').value;
+      const role        = document.getElementById('nu-role').value;
+      const errEl       = document.getElementById('add-user-err');
+      try {
+        addUser({ username, displayName, password, role });
+        showToast('User added');
+        renderAdminUsers();
+      } catch(e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    el.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = document.getElementById('erow-' + btn.dataset.uid);
+        if (row) row.classList.toggle('hidden');
+      });
+    });
+
+    el.querySelectorAll('.btn-cancel-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('erow-' + btn.dataset.uid).classList.add('hidden');
+      });
+    });
+
+    el.querySelectorAll('.btn-save-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const uid         = btn.dataset.uid;
+        const displayName = document.getElementById('en-' + uid).value.trim();
+        const password    = document.getElementById('ep-' + uid).value;
+        const role        = document.getElementById('er-' + uid).value;
+        if (!displayName) { showToast('Display name is required', 'error'); return; }
+        const changes = { displayName, role };
+        if (password) changes.password = password;
+        try {
+          updateUser(uid, changes);
+          if (uid === sess.userId) setSession(getUserById(uid)); // refresh own session
+          showToast('User updated');
+          renderAdminUsers();
+        } catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+
+    el.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const u = getUserById(btn.dataset.uid);
+        if (!u) return;
+        if (!confirm(`Delete user "${u.displayName}" (${u.username})?\nThis cannot be undone.`)) return;
+        try { deleteUser(u.id); showToast('User deleted'); renderAdminUsers(); }
+        catch(e) { showToast(e.message, 'error'); }
+      });
+    });
+  }
+
+  // =========================================================
+  // J — ADMIN: ASSET REGISTRATION
+  // =========================================================
+  function renderAdminAssets() {
+    if (!requireSession()) return;
+    if (!hasRole(ROLES.ADMIN)) { showView('dashboard'); return; }
+    renderHeader('hdr-admin-assets', 'Asset Registration', true);
+
+    const assets = getAssets();
+    const states = getStates();
+    const el     = document.getElementById('admin-assets-content');
+
+    el.innerHTML = `
+      <div class="admin-header">
+        <h2>Registered Assets (${assets.length})</h2>
+        <button class="btn btn-secondary btn-sm" id="btn-back-assets">&larr; Dashboard</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Register New Asset</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Serial / VIN Number</label>
+              <input type="text" id="na-serial" placeholder="e.g. CAT320-0042 or 1HGBH41JXMN109186">
+            </div>
+            <div class="form-group" style="flex:2">
+              <label>Description</label>
+              <input type="text" id="na-desc" placeholder="e.g. CAT 320 Excavator — Unit 4">
+            </div>
+          </div>
+          <div id="add-asset-err" class="error-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-add-asset" style="margin-top:0.5rem">Register Asset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">All Assets</div>
+        <div class="tbl-overflow">
+          <table>
+            <thead>
+              <tr><th>Serial / VIN</th><th>Description</th><th>Status</th><th>Location</th><th>Registered</th></tr>
+            </thead>
+            <tbody>
+              ${assets.length === 0
+                ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No assets registered yet</td></tr>'
+                : assets.map(a => {
+                    const st = states.find(s => s.assetId === a.id) || {};
+                    return `<tr>
+                      <td><strong>${sanitize(a.serial)}</strong></td>
+                      <td>${sanitize(a.description)}</td>
+                      <td>${statusBadge(st.status || 'Onsite')}</td>
+                      <td>${sanitize(st.location || '—')}</td>
+                      <td>${fmtDate(a.registeredAt)}</td>
+                    </tr>`;
+                  }).join('')
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    el.querySelector('#btn-back-assets').addEventListener('click', () => showView('dashboard'));
+
+    el.querySelector('#btn-add-asset').addEventListener('click', () => {
+      const serial      = document.getElementById('na-serial').value.trim();
+      const description = document.getElementById('na-desc').value.trim();
+      const errEl       = document.getElementById('add-asset-err');
+      try {
+        addAsset({ serial, description });
+        showToast('Asset registered');
+        renderAdminAssets();
+      } catch(e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+  }
+
+  // =========================================================
+  // K — ADMIN: SERVICE CATALOG
+  // =========================================================
+  function renderAdminServices() {
+    if (!requireSession()) return;
+    if (!hasRole(ROLES.ADMIN)) { showView('dashboard'); return; }
+    renderHeader('hdr-admin-services', 'Service Catalog', true);
+
+    const all      = getServices();
+    const active   = all.filter(s => s.active);
+    const inactive = all.filter(s => !s.active);
+    const el       = document.getElementById('admin-services-content');
+
+    el.innerHTML = `
+      <div class="admin-header">
+        <h2>Service Catalog (${active.length} active)</h2>
+        <button class="btn btn-secondary btn-sm" id="btn-back-svcs">&larr; Dashboard</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Add New Service</div>
+        <div class="card-body">
+          <div class="form-inline">
+            <div class="form-group">
+              <label>Service Name</label>
+              <input type="text" id="ns-name" placeholder="e.g. Hydraulic Hose Replacement">
+            </div>
+            <div><button class="btn btn-primary" id="btn-add-svc" style="margin-top:1.5rem">Add Service</button></div>
+          </div>
+          <div id="add-svc-err" class="error-msg hidden" style="margin-top:0.5rem"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Active Services</div>
+        <div class="card-body" id="active-svcs">
+          ${active.length === 0
+            ? '<p style="color:var(--text-muted)">No active services.</p>'
+            : active.map(s => `
+                <div class="svc-item">
+                  <span class="svc-name">${sanitize(s.name)}</span>
+                  <button class="btn btn-danger btn-sm btn-deactivate" data-id="${sanitize(s.id)}">Remove</button>
+                </div>`).join('')
+          }
+        </div>
+        ${inactive.length > 0 ? `
+          <div class="card-body" style="border-top:1px solid var(--border)">
+            <details>
+              <summary>Removed services (${inactive.length}) — click to view</summary>
+              <div style="margin-top:0.75rem">
+                ${inactive.map(s => `
+                  <div class="svc-item">
+                    <span class="svc-removed">${sanitize(s.name)}</span>
+                    <button class="btn btn-secondary btn-sm btn-reactivate" data-id="${sanitize(s.id)}">Restore</button>
+                  </div>`).join('')}
+              </div>
+            </details>
+          </div>` : ''}
+      </div>
+    `;
+
+    el.querySelector('#btn-back-svcs').addEventListener('click', () => showView('dashboard'));
+
+    el.querySelector('#btn-add-svc').addEventListener('click', () => {
+      const name  = document.getElementById('ns-name').value.trim();
+      const errEl = document.getElementById('add-svc-err');
+      try {
+        addService(name);
+        showToast('Service added');
+        renderAdminServices();
+      } catch(e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    el.querySelectorAll('.btn-deactivate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const svc = getServices().find(s => s.id === btn.dataset.id);
+        if (!svc) return;
+        if (!confirm(`Remove "${svc.name}" from the active list?\nExisting log entries will be preserved.`)) return;
+        deactivateService(btn.dataset.id);
+        showToast('Service removed');
+        renderAdminServices();
+      });
+    });
+
+    el.querySelectorAll('.btn-reactivate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        reactivateService(btn.dataset.id);
+        showToast('Service restored');
+        renderAdminServices();
+      });
+    });
+  }
+
+  // =========================================================
+  // M — INIT
+  // =========================================================
+  document.addEventListener('DOMContentLoaded', () => {
+    seedIfEmpty();
+    showView(getSession() ? 'dashboard' : 'login');
+  });
+  </script>
+</body>
+</html>
