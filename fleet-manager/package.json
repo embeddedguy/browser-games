@@ -1,0 +1,14 @@
+{
+  "name": "fleet-asset-manager",
+  "version": "1.0.0",
+  "description": "Fleet Asset Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

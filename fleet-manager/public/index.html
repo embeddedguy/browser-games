@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Fleet Asset Manager</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#1a2744; --navy-l:#263354; --accent:#2563eb; --accent-h:#1d4ed8;
+      --ok:#16a34a; --ok-bg:#dcfce7; --ok-t:#166534;
+      --warn:#d97706; --warn-bg:#fef9c3; --warn-t:#854d0e;
+      --danger:#dc2626; --danger-bg:#fee2e2; --danger-t:#991b1b;
+      --orange:#ea580c; --orange-bg:#ffedd5; --orange-t:#9a3412;
+      --surface:#fff; --surface2:#f8fafc; --border:#e2e8f0;
+      --text:#1a1a2e; --muted:#64748b;
+    }
+    body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:#f0f2f5; color:var(--text); min-height:100vh; font-size:16px; -webkit-tap-highlight-color:transparent; }
+
+    /* Views */
+    .view { display:none; min-height:100vh; }
+    .view.active { display:block; }
+    #view-login.active { display:flex; }
+
+    /* Header */
+    .app-header { background:var(--navy); color:#fff; padding:0 1.25rem; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.3); gap:.75rem; }
+    .hdr-left { display:flex; align-items:center; gap:.75rem; min-width:0; }
+    .hdr-title { font-size:1.05rem; font-weight:700; white-space:nowrap; }
+    .hdr-nav { display:flex; gap:.35rem; align-items:center; flex-wrap:nowrap; }
+    .hdr-user { font-size:.78rem; color:rgba(255,255,255,.75); white-space:nowrap; display:none; }
+    @media(min-width:520px){ .hdr-user { display:inline; } }
+    .role-chip { display:inline-block; padding:.1rem .45rem; border-radius:9999px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; background:rgba(255,255,255,.18); color:#fff; margin-left:.3rem; }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:48px; padding:.6rem 1.1rem; font-size:1rem; font-weight:600; font-family:inherit; border:none; border-radius:8px; cursor:pointer; transition:background .15s,transform .1s; white-space:nowrap; user-select:none; -webkit-user-select:none; }
+    .btn:active { transform:scale(.97); }
+    .btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+    .btn-primary  { background:var(--accent); color:#fff; }
+    .btn-primary:hover:not(:disabled)  { background:var(--accent-h); }
+    .btn-success  { background:var(--ok); color:#fff; }
+    .btn-success:hover:not(:disabled)  { background:#15803d; }
+    .btn-danger   { background:var(--danger); color:#fff; }
+    .btn-danger:hover:not(:disabled)   { background:#b91c1c; }
+    .btn-warning  { background:var(--warn); color:#fff; }
+    .btn-warning:hover:not(:disabled)  { background:#b45309; }
+    .btn-secondary{ background:var(--border); color:#374151; }
+    .btn-secondary:hover:not(:disabled){ background:#cbd5e1; }
+    .btn-ghost { background:transparent; color:rgba(255,255,255,.85); border:1.5px solid rgba(255,255,255,.3); min-height:34px; padding:.25rem .7rem; font-size:.82rem; border-radius:6px; }
+    .btn-ghost:hover { background:rgba(255,255,255,.12); }
+    .btn-sm  { min-height:36px; padding:.3rem .7rem; font-size:.875rem; }
+    .btn-lg  { min-height:56px; font-size:1.1rem; width:100%; }
+    .btn-block { width:100%; }
+
+    /* Forms */
+    .fg { margin-bottom:1rem; }
+    .fg label { display:block; font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
+    input[type=text],input[type=password],select,textarea {
+      display:block; width:100%; min-height:48px; font-size:1rem; font-family:inherit;
+      padding:.625rem .875rem; border:1.5px solid var(--border); border-radius:8px;
+      background:var(--surface2); color:var(--text); transition:border-color .15s,box-shadow .15s;
+      -webkit-appearance:none; appearance:none;
+    }
+    select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .875rem center; padding-right:2.5rem; cursor:pointer; }
+    input:focus,select:focus,textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.15); background:#fff; }
+    textarea { min-height:76px; resize:vertical; }
+    .err-msg { color:var(--danger); font-size:.875rem; font-weight:500; margin-top:.4rem; }
+    .hidden { display:none !important; }
+
+    /* Login */
+    #view-login { align-items:center; justify-content:center; background:var(--navy); padding:1.5rem 1rem; }
+    .login-card { background:var(--surface); border-radius:16px; padding:2.5rem 2rem; width:100%; max-width:420px; box-shadow:0 8px 32px rgba(0,0,0,.35); }
+    .app-logo { text-align:center; margin-bottom:2rem; }
+    .app-logo h1 { font-size:1.65rem; font-weight:800; color:var(--navy); letter-spacing:-.02em; }
+    .app-logo p  { font-size:.875rem; color:var(--muted); margin-top:.3rem; }
+    .login-hint  { text-align:center; font-size:.8rem; color:var(--muted); margin-top:1rem; }
+
+    /* View body */
+    .vbody { padding:1rem; }
+    .pg-head  { font-size:1.15rem; font-weight:700; color:var(--navy); padding:1.1rem 1rem .25rem; }
+    .pg-sub   { font-size:.875rem; color:var(--muted); padding:0 1rem .85rem; }
+
+    /* Fleet summary bar */
+    .fleet-bar { display:flex; gap:.5rem; padding:.75rem 1rem; flex-wrap:wrap; }
+    .fleet-stat { background:var(--surface); border-radius:10px; padding:.6rem 1rem; display:flex; flex-direction:column; align-items:center; min-width:80px; box-shadow:0 1px 3px rgba(0,0,0,.08); flex:1; }
+    .fleet-stat-num  { font-size:1.4rem; font-weight:800; color:var(--navy); }
+    .fleet-stat-label{ font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+
+    /* Asset grid */
+    .asset-grid { padding:0 1rem 4rem; }
+    .asset-card { background:var(--surface); border-radius:12px; padding:1rem; margin-bottom:.75rem; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; justify-content:space-between; align-items:center; gap:.75rem; cursor:pointer; transition:box-shadow .15s,transform .1s; border:1.5px solid transparent; }
+    .asset-card:hover  { box-shadow:0 4px 16px rgba(0,0,0,.12); border-color:var(--border); }
+    .asset-card:active { transform:scale(.99); }
+    .ac-info { flex:1; min-width:0; }
+    .ac-serial{ font-size:1rem; font-weight:700; color:var(--navy); }
+    .ac-desc  { font-size:.875rem; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ac-meta  { font-size:.78rem; color:var(--muted); margin-top:5px; }
+    .ac-right { display:flex; flex-direction:column; align-items:flex-end; gap:.4rem; flex-shrink:0; }
+    .section-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); padding:.6rem 1rem .2rem; }
+
+    /* Badges */
+    .badge { display:inline-block; padding:.25rem .75rem; border-radius:9999px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+    .badge-Onsite   { background:var(--ok-bg);     color:var(--ok-t); }
+    .badge-Deployed { background:var(--warn-bg);   color:var(--warn-t); }
+    .badge-Disabled { background:var(--danger-bg); color:var(--danger-t); }
+    .badge-Flagged  { background:var(--orange-bg); color:var(--orange-t); }
+
+    /* Asset detail */
+    .detail-banner { background:var(--surface); border-bottom:1px solid var(--border); padding:1rem; display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; }
+    .db-serial { font-size:1.2rem; font-weight:800; color:var(--navy); }
+    .db-desc   { font-size:.875rem; color:var(--muted); margin-top:3px; }
+    .db-meta   { font-size:.72rem; color:var(--muted); margin-top:3px; }
+    .db-right  { display:flex; flex-direction:column; align-items:flex-end; gap:.4rem; flex-shrink:0; }
+
+    .sec-card  { background:var(--surface); border-radius:12px; padding:1.2rem; margin-bottom:1rem; box-shadow:0 1px 4px rgba(0,0,0,.07); }
+    .sec-title { font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:1rem; padding-bottom:.5rem; border-bottom:1px solid var(--border); }
+    .action-btns { display:flex; flex-direction:column; gap:.75rem; }
+    @media(min-width:600px){ .action-btns { flex-direction:row; flex-wrap:wrap; } .action-btns .btn { flex:1; min-width:150px; } }
+
+    /* Service search */
+    .svc-wrap { position:relative; }
+    .svc-drop { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1.5px solid var(--border); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); max-height:230px; overflow-y:auto; z-index:200; display:none; }
+    .svc-drop.open { display:block; }
+    .svc-drop li { list-style:none; padding:.8rem 1rem; cursor:pointer; font-size:.95rem; border-bottom:1px solid #f1f5f9; }
+    .svc-drop li:last-child { border-bottom:none; }
+    .svc-drop li:hover { background:#eff6ff; color:var(--accent); }
+    .svc-drop li.no-res { color:var(--muted); cursor:default; font-style:italic; font-size:.875rem; }
+    .svc-drop li.no-res:hover { background:none; color:var(--muted); }
+    .svc-sel-label { font-size:.875rem; color:var(--ok-t); font-weight:600; margin-top:.4rem; min-height:1.2rem; }
+
+    /* Log entries */
+    .log-entry { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; padding:.85rem 0; border-bottom:1px solid #f1f5f9; }
+    .log-entry:last-child { border-bottom:none; }
+    .log-svc  { font-weight:600; font-size:.95rem; }
+    .log-by   { font-size:.78rem; color:var(--muted); margin-top:3px; }
+    .log-time { font-size:.72rem; color:var(--muted); white-space:nowrap; text-align:right; flex-shrink:0; }
+    .job-tag  { display:inline-block; font-size:.68rem; background:#ede9fe; color:#5b21b6; border-radius:4px; padding:.1rem .4rem; margin-left:.35rem; font-weight:600; }
+
+    /* Location dropdown */
+    .loc-other-wrap { margin-top:.5rem; display:none; }
+    .loc-other-wrap.show { display:block; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); padding:.75rem 1.5rem; border-radius:10px; font-weight:600; font-size:.95rem; z-index:9999; pointer-events:none; white-space:nowrap; max-width:calc(100vw - 2rem); text-align:center; box-shadow:0 4px 16px rgba(0,0,0,.2); transition:opacity .4s; }
+    .toast-success { background:#16a34a; color:#fff; }
+    .toast-error   { background:#dc2626; color:#fff; }
+    .toast-info    { background:#2563eb; color:#fff; }
+
+    /* Admin */
+    .adm-content { max-width:980px; margin:0 auto; padding:1.5rem; }
+    .adm-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem; }
+    .adm-hdr h2 { font-size:1.2rem; font-weight:700; color:var(--navy); }
+    .card { background:var(--surface); border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; margin-bottom:1.5rem; }
+    .card-hdr { padding:.875rem 1.25rem; border-bottom:1px solid var(--border); font-weight:700; font-size:.95rem; color:var(--navy); }
+    .card-body { padding:1.25rem; }
+    .form-row { display:flex; gap:.75rem; flex-wrap:wrap; }
+    .form-row .fg { flex:1; min-width:140px; }
+    .form-inline { display:flex; gap:.75rem; align-items:flex-end; flex-wrap:wrap; }
+    .form-inline .fg { flex:1; min-width:180px; margin-bottom:0; }
+    table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    thead th { background:var(--surface2); text-align:left; padding:.65rem .875rem; border-bottom:2px solid var(--border); font-weight:700; color:#374151; white-space:nowrap; }
+    tbody td { padding:.6rem .875rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    tbody tr:hover td { background:#f8fafc; }
+    tbody tr:last-child td { border-bottom:none; }
+    .tbl-wrap { overflow-x:auto; }
+    .row-acts { display:flex; gap:.35rem; flex-wrap:nowrap; }
+    .svc-item { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid #f1f5f9; gap:.75rem; }
+    .svc-item:last-child { border-bottom:none; }
+    .svc-name { font-weight:500; font-size:.95rem; }
+    .svc-removed { color:var(--muted); text-decoration:line-through; font-size:.875rem; }
+    details summary { cursor:pointer; color:var(--muted); font-size:.875rem; user-select:none; padding:.5rem 0; }
+    details summary:hover { color:var(--text); }
+
+    /* Workshop board */
+    .ws-job { background:var(--surface); border-radius:12px; padding:1rem; margin-bottom:.75rem; box-shadow:0 1px 4px rgba(0,0,0,.08); border-left:4px solid var(--border); }
+    .ws-job.priority-Urgent   { border-left-color:var(--danger); }
+    .ws-job.priority-Normal   { border-left-color:var(--accent); }
+    .ws-job.priority-Scheduled{ border-left-color:var(--ok); }
+    .ws-job-hdr { display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem; flex-wrap:wrap; }
+    .ws-serial  { font-size:1rem; font-weight:700; color:var(--navy); }
+    .ws-desc    { font-size:.875rem; color:var(--muted); margin-top:2px; }
+    .ws-badges  { display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; flex-shrink:0; }
+    .ws-meta    { font-size:.78rem; color:var(--muted); margin-top:.35rem; }
+    .ws-detail  { margin-top:1rem; border-top:1px solid var(--border); padding-top:1rem; display:none; }
+    .ws-detail.open { display:block; }
+    .ws-tech-panel { background:var(--surface); border-radius:10px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,.07); margin-bottom:1rem; }
+    .ws-tech-panel h4 { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:.75rem; }
+    .tech-row { display:flex; justify-content:space-between; align-items:center; padding:.35rem 0; border-bottom:1px solid #f1f5f9; font-size:.9rem; }
+    .tech-row:last-child { border-bottom:none; }
+    .badge-job { display:inline-block; padding:.15rem .5rem; border-radius:9999px; font-size:.7rem; font-weight:700; background:#e0e7ff; color:#3730a3; }
+
+    /* Reports */
+    .stat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:.75rem; margin-bottom:1.5rem; }
+    .stat-card { background:var(--surface); border-radius:10px; padding:1rem; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.07); }
+    .stat-num   { font-size:2rem; font-weight:800; color:var(--navy); }
+    .stat-label { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:.25rem; }
+    .warn-row   { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid #f1f5f9; font-size:.9rem; }
+    .warn-row:last-child { border-bottom:none; }
+    .warn-days  { font-weight:700; color:var(--danger); }
+
+    @media(min-width:768px){ .vbody { padding:1.5rem; } .asset-grid { padding:0 1.5rem 3rem; } .pg-head { padding:1.5rem 1.5rem .25rem; } .pg-sub { padding:0 1.5rem 1rem; } }
+    @media(min-width:1024px){ .asset-grid-inner { display:grid; grid-template-columns:repeat(auto-fill,minmax(370px,1fr)); gap:.85rem; } .asset-grid-inner .asset-card { margin-bottom:0; } }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- LOGIN -->
+  <div id="view-login" class="view">
+    <div class="login-card">
+      <div class="app-logo">
+        <h1>Fleet Asset Manager</h1>
+        <p>Operations Asset Tracking System</p>
+      </div>
+      <form id="form-login" novalidate>
+        <div class="fg"><label for="l-user">Username</label><input id="l-user" type="text" autocomplete="username" placeholder="Enter username"></div>
+        <div class="fg"><label for="l-pass">Password</label><input id="l-pass" type="password" autocomplete="current-password" placeholder="Enter password"></div>
+        <div id="l-err" class="err-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-lg" style="margin-top:.5rem">Sign In</button>
+      </form>
+      <p class="login-hint">Default: admin / admin123</p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="view">
+    <header class="app-header" id="hdr-dash"></header>
+    <div id="fleet-bar"></div>
+    <div class="pg-head">Assets</div>
+    <div id="dash-sub" class="pg-sub"></div>
+    <div style="padding:0 1rem .75rem"><input type="text" id="search-inp" placeholder="🔍  Search by serial or description…" style="max-width:480px"></div>
+    <div class="asset-grid">
+      <div id="my-jobs-section"></div>
+      <div id="asset-grid-inner" class="asset-grid-inner"></div>
+    </div>
+  </div>
+
+  <!-- ASSET DETAIL -->
+  <div id="view-asset-detail" class="view">
+    <header class="app-header" id="hdr-detail"></header>
+    <div id="detail-banner" class="detail-banner"></div>
+    <div class="vbody"><div id="detail-content"></div></div>
+  </div>
+
+  <!-- WORKSHOP BOARD -->
+  <div id="view-workshop" class="view">
+    <header class="app-header" id="hdr-ws"></header>
+    <div class="vbody"><div id="ws-content"></div></div>
+  </div>
+
+  <!-- ADMIN: USERS -->
+  <div id="view-admin-users" class="view">
+    <header class="app-header" id="hdr-au"></header>
+    <div class="adm-content" id="au-content"></div>
+  </div>
+
+  <!-- ADMIN: ASSETS -->
+  <div id="view-admin-assets" class="view">
+    <header class="app-header" id="hdr-aa"></header>
+    <div class="adm-content" id="aa-content"></div>
+  </div>
+
+  <!-- ADMIN: SERVICES -->
+  <div id="view-admin-services" class="view">
+    <header class="app-header" id="hdr-as"></header>
+    <div class="adm-content" id="as-content"></div>
+  </div>
+
+  <!-- ADMIN: LOCATIONS -->
+  <div id="view-admin-locations" class="view">
+    <header class="app-header" id="hdr-al"></header>
+    <div class="adm-content" id="al-content"></div>
+  </div>
+
+  <!-- ADMIN: SETTINGS -->
+  <div id="view-admin-settings" class="view">
+    <header class="app-header" id="hdr-aset"></header>
+    <div class="adm-content" id="aset-content"></div>
+  </div>
+
+  <!-- ADMIN: REPORTS -->
+  <div id="view-admin-reports" class="view">
+    <header class="app-header" id="hdr-ar"></header>
+    <div class="adm-content" id="ar-content"></div>
+  </div>
+
+<script>
+// ── A: CONSTANTS ──────────────────────────────────────────────────────────────
+const ROLE_LABELS = { admin:'Admin', supervisor:'Supervisor', tech:'Technician', user:'User' };
+const ALL_VIEWS   = ['login','dashboard','asset-detail','workshop','admin-users','admin-assets','admin-services','admin-locations','admin-settings','admin-reports'];
+
+// ── B: UTILITIES ──────────────────────────────────────────────────────────────
+function san(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmtDT(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) + ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function fmtD(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
+function daysSince(iso) { if (!iso) return 0; return Math.floor((Date.now()-new Date(iso).getTime())/86400000); }
+
+// ── C: API LAYER ──────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const token = localStorage.getItem('fleet_jwt');
+  const opts  = { method, headers: { 'Content-Type':'application/json', ...(token ? {'Authorization':'Bearer '+token} : {}) } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api' + path, opts);
+  if (res.status === 401) { showView('login'); throw new Error('Session expired'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── D: SESSION ────────────────────────────────────────────────────────────────
+function getUser() { try { return JSON.parse(localStorage.getItem('fleet_user')); } catch { return null; } }
+function setUser(u) { localStorage.setItem('fleet_user', JSON.stringify(u)); }
+function getToken() { return localStorage.getItem('fleet_jwt'); }
+function logout() { localStorage.removeItem('fleet_jwt'); localStorage.removeItem('fleet_user'); showView('login'); }
+function hasRole(...roles) { const u = getUser(); return u && roles.includes(u.role); }
+
+// ── E: ROUTER ─────────────────────────────────────────────────────────────────
+let currentView = 'login', currentParams = {};
+function showView(id, params = {}) {
+  ALL_VIEWS.forEach(v => { const el = document.getElementById('view-'+v); if (el) el.classList.remove('active'); });
+  const target = document.getElementById('view-'+id);
+  if (!target) return;
+  target.classList.add('active');
+  currentView = id; currentParams = params;
+  window.scrollTo(0,0);
+  const map = {
+    'login':           renderLogin,
+    'dashboard':       renderDashboard,
+    'asset-detail':    () => renderAssetDetail(params),
+    'workshop':        renderWorkshop,
+    'admin-users':     renderAdminUsers,
+    'admin-assets':    renderAdminAssets,
+    'admin-services':  renderAdminServices,
+    'admin-locations': renderAdminLocations,
+    'admin-settings':  renderAdminSettings,
+    'admin-reports':   renderAdminReports
+  };
+  if (map[id]) map[id]();
+}
+
+// ── F: SHARED HELPERS ─────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.className = 'toast toast-'+type;
+  el.textContent = msg;
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.add('hidden'), 2800);
+}
+
+function statusBadge(status, flagged) {
+  if (flagged) return `<span class="badge badge-Flagged">Flagged</span>`;
+  const s = san(status || 'Onsite');
+  return `<span class="badge badge-${s}">${s}</span>`;
+}
+
+function jobStatusBadge(js) {
+  const colors = { 'Flagged':'background:#ffedd5;color:#9a3412', 'Waiting':'background:#e0e7ff;color:#3730a3', 'In Progress':'background:#dcfce7;color:#166534', 'Awaiting Parts':'background:#fef9c3;color:#854d0e', 'Ready for Release':'background:#d1fae5;color:#065f46' };
+  const style = colors[js] || '';
+  return `<span class="badge" style="${style};font-size:.7rem">${san(js)}</span>`;
+}
+
+function priorityBadge(p) {
+  const colors = { Urgent:'background:#fee2e2;color:#991b1b', Normal:'background:#e0e7ff;color:#3730a3', Scheduled:'background:#dcfce7;color:#166534' };
+  return `<span class="badge" style="${colors[p]||''};font-size:.68rem">${san(p)}</span>`;
+}
+
+function renderHeader(containerId, title, opts = {}) {
+  const user = getUser(); if (!user) return;
+  const el = document.getElementById(containerId); if (!el) return;
+  const { showAdminNav = false, showWsBtn = false } = opts;
+
+  const adminBtns = showAdminNav ? `
+    <button class="btn btn-ghost" data-nav="admin-users">Users</button>
+    <button class="btn btn-ghost" data-nav="admin-assets">Assets</button>
+    <button class="btn btn-ghost" data-nav="admin-services">Services</button>
+    <button class="btn btn-ghost" data-nav="admin-locations">Locations</button>
+    <button class="btn btn-ghost" data-nav="admin-settings">Settings</button>
+    <button class="btn btn-ghost" data-nav="admin-reports">Reports</button>
+  ` : '';
+  const wsBtnHtml = showWsBtn ? `<button class="btn btn-ghost" data-nav="workshop">Workshop</button>` : '';
+
+  el.innerHTML = `
+    <div class="hdr-left"><span class="hdr-title">${san(title)}</span></div>
+    <div class="hdr-nav">
+      ${adminBtns}${wsBtnHtml}
+      <span class="hdr-user">${san(user.displayName)}<span class="role-chip">${san(ROLE_LABELS[user.role]||user.role)}</span></span>
+      <button class="btn btn-ghost" id="btn-logout">Logout</button>
+    </div>`;
+  el.querySelector('#btn-logout').addEventListener('click', logout);
+  el.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => showView(b.dataset.nav)));
+}
+
+async function buildLocationDropdown(selectEl, selectedId) {
+  const locs = await api('GET', '/locations');
+  const official = locs.filter(l => !l.isCustom);
+  const custom   = locs.filter(l => l.isCustom);
+
+  const bySite = {};
+  official.forEach(l => { (bySite[l.siteName] = bySite[l.siteName] || []).push(l); });
+
+  let html = '<option value="">-- Select Location --</option>';
+  Object.entries(bySite).forEach(([site, items]) => {
+    html += `<optgroup label="${san(site)}">`;
+    items.forEach(l => { html += `<option value="${san(l.id)}" ${l.id===selectedId?'selected':''}>${san(l.siteName)} — ${san(l.subLocation)}</option>`; });
+    html += '</optgroup>';
+  });
+  if (custom.length) {
+    html += '<optgroup label="— Custom —">';
+    custom.forEach(l => { html += `<option value="${san(l.id)}" ${l.id===selectedId?'selected':''}>${san(l.siteName)} — ${san(l.subLocation)}</option>`; });
+    html += '</optgroup>';
+  }
+  html += '<option value="__other__">Other (specify)…</option>';
+  selectEl.innerHTML = html;
+}
+
+function initSvcSearch(inpId, dropId, lblId, hidId, hidNameId) {
+  const inp = document.getElementById(inpId);
+  const drop= document.getElementById(dropId);
+  const lbl = document.getElementById(lblId);
+  const hid = document.getElementById(hidId);
+  const hn  = document.getElementById(hidNameId);
+  if (!inp) return;
+
+  async function rebuild(filter) {
+    const svcs = await api('GET', '/services').catch(() => []);
+    const list = svcs.filter(s => s.active && (!filter || s.name.toLowerCase().includes(filter.toLowerCase())));
+    if (!list.length) { drop.innerHTML = '<li class="no-res">No matching services</li>'; }
+    else {
+      drop.innerHTML = list.map(s => `<li data-id="${san(s.id)}" data-name="${san(s.name)}">${san(s.name)}</li>`).join('');
+      drop.querySelectorAll('li[data-id]').forEach(li => {
+        li.addEventListener('mousedown', e => {
+          e.preventDefault();
+          hid.value = li.dataset.id; hn.value = li.dataset.name;
+          inp.value = li.dataset.name; if (lbl) lbl.textContent = '✓ '+li.dataset.name;
+          drop.classList.remove('open');
+        });
+      });
+    }
+    drop.classList.add('open');
+  }
+  inp.addEventListener('input',  () => rebuild(inp.value));
+  inp.addEventListener('focus',  () => rebuild(inp.value));
+  inp.addEventListener('blur',   () => setTimeout(() => drop.classList.remove('open'), 150));
+}
+
+// ── G: LOGIN ──────────────────────────────────────────────────────────────────
+function renderLogin() {
+  document.getElementById('l-err').classList.add('hidden');
+  document.getElementById('l-user').value = '';
+  document.getElementById('l-pass').value = '';
+  document.getElementById('form-login').onsubmit = async e => {
+    e.preventDefault();
+    const username = document.getElementById('l-user').value.trim();
+    const password = document.getElementById('l-pass').value;
+    const errEl = document.getElementById('l-err');
+    try {
+      const data = await api('POST', '/auth/login', { username, password });
+      localStorage.setItem('fleet_jwt', data.token);
+      setUser(data.user);
+      showView('dashboard');
+    } catch(err) {
+      errEl.textContent = err.message;
+      errEl.classList.remove('hidden');
+    }
+  };
+}
+
+// ── H: DASHBOARD ──────────────────────────────────────────────────────────────
+async function renderDashboard() {
+  const user = getUser(); if (!user) { showView('login'); return; }
+  const isAdmin = user.role === 'admin';
+  const isSup   = hasRole('supervisor','admin');
+  const isTech  = user.role === 'tech';
+  renderHeader('hdr-dash', 'Fleet Asset Manager', { showAdminNav: isAdmin, showWsBtn: hasRole('supervisor','admin') });
+
+  try {
+    const [assets, stats] = await Promise.all([
+      api('GET', '/assets'),
+      isSup ? api('GET', '/reports/dashboard').catch(() => null) : Promise.resolve(null)
+    ]);
+
+    // Fleet bar
+    const barEl = document.getElementById('fleet-bar');
+    if (isSup && stats) {
+      barEl.innerHTML = `<div class="fleet-bar">
+        <div class="fleet-stat"><span class="fleet-stat-num">${stats.stats.operational}</span><span class="fleet-stat-label">Operational</span></div>
+        <div class="fleet-stat"><span class="fleet-stat-num">${stats.stats.inWorkshop}</span><span class="fleet-stat-label">In Workshop</span></div>
+        <div class="fleet-stat"><span class="fleet-stat-num">${stats.stats.disabled}</span><span class="fleet-stat-label">Disabled</span></div>
+        <div class="fleet-stat"><span class="fleet-stat-num">${stats.stats.flagged}</span><span class="fleet-stat-label">Flagged</span></div>
+        <div class="fleet-stat"><span class="fleet-stat-num">${stats.stats.total}</span><span class="fleet-stat-label">Total</span></div>
+      </div>`;
+    } else { barEl.innerHTML = ''; }
+
+    document.getElementById('dash-sub').textContent = `${assets.length} asset${assets.length!==1?'s':''} registered`;
+
+    // My Jobs (tech)
+    const mjEl = document.getElementById('my-jobs-section');
+    if (isTech) {
+      const myJobs = assets.filter(a => a.activeJob && a.activeJob.assignedTechName === user.displayName);
+      if (myJobs.length) {
+        mjEl.innerHTML = `<div class="section-label">My Assigned Jobs</div>` + myJobs.map(a => assetCard(a, true)).join('');
+      } else { mjEl.innerHTML = ''; }
+    } else { mjEl.innerHTML = ''; }
+
+    // All assets
+    const innerEl = document.getElementById('asset-grid-inner');
+    if (!assets.length) {
+      innerEl.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:.75rem">🚧</div><h3 style="color:#374151;margin-bottom:.35rem">No assets yet</h3><p>${isAdmin?'Go to Admin → Assets to register equipment.':'Ask an admin to register assets.'}</p></div>`;
+    } else {
+      innerEl.innerHTML = assets.map(a => assetCard(a, false)).join('');
+    }
+
+    // Search
+    document.getElementById('search-inp').oninput = function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('.asset-card').forEach(card => {
+        const serial = (card.dataset.serial||'').toLowerCase();
+        const desc   = (card.dataset.desc||'').toLowerCase();
+        card.style.display = (serial.includes(q)||desc.includes(q)) ? '' : 'none';
+      });
+    };
+
+    // Click handlers
+    document.querySelectorAll('.asset-card[data-id]').forEach(card => {
+      card.addEventListener('click', () => showView('asset-detail', { assetId: card.dataset.id }));
+    });
+  } catch(err) { showToast(err.message, 'error'); }
+}
+
+function assetCard(a, highlight) {
+  const st = a.state || {};
+  const loc = st.locationDisplay || '<em style="color:var(--muted)">No location</em>';
+  const dsince = st.disabledSince && !a.state.flagged ? `<span style="color:var(--danger);font-weight:600"> · ${daysSince(st.disabledSince)}d disabled</span>` : '';
+  return `<div class="asset-card${highlight?' border-accent':''}" data-id="${san(a.id)}" data-serial="${san(a.serial)}" data-desc="${san(a.description)}" style="${highlight?'border-color:var(--accent);':''}" >
+    <div class="ac-info">
+      <div class="ac-serial">${san(a.serial)}</div>
+      <div class="ac-desc">${san(a.description)}</div>
+      <div class="ac-meta">${loc}${st.message?' · '+san(st.message):''}${dsince}</div>
+    </div>
+    <div class="ac-right">
+      ${statusBadge(st.status, st.flagged)}
+      ${a.activeJob ? `<span class="badge-job">${san(a.activeJob.jobStatus)}</span>` : ''}
+      <span style="font-size:.78rem;color:var(--muted)">View ›</span>
+    </div>
+  </div>`;
+}
+
+// ── I: ASSET DETAIL ───────────────────────────────────────────────────────────
+async function renderAssetDetail({ assetId }) {
+  const user = getUser(); if (!user) { showView('login'); return; }
+  const isAdmin = user.role === 'admin';
+  const isTech  = hasRole('tech','supervisor','admin');
+  const canRelease = hasRole('supervisor','admin');
+  renderHeader('hdr-detail', 'Asset Detail', { showAdminNav: isAdmin, showWsBtn: hasRole('supervisor','admin') });
+
+  try {
+    const [a, locs] = await Promise.all([api('GET', `/assets/${assetId}`), api('GET', '/locations')]);
+
+    const st  = a.state || {};
+    const job = a.activeJob;
+    const by  = st.lastUpdatedByName;
+    const downtime = st.disabledSince ? daysSince(st.disabledSince) : 0;
+
+    // Settings for downtime threshold
+    let threshold = 5;
+    try { const s = await api('GET', '/settings'); threshold = s.downtimeWarningDays || 5; } catch {}
+
+    // Banner
+    document.getElementById('detail-banner').innerHTML = `
+      <div>
+        <div class="db-serial">${san(a.serial)}</div>
+        <div class="db-desc">${san(a.description)}</div>
+        ${a.registeredAt ? `<div class="db-meta">Registered ${fmtD(a.registeredAt)}${a.registeredByName?' by '+san(a.registeredByName):''}</div>` : ''}
+      </div>
+      <div class="db-right">
+        ${statusBadge(st.status, st.flagged)}
+        ${st.lastUpdatedAt ? `<span class="db-meta">Updated ${fmtDT(st.lastUpdatedAt)}${by?' by '+san(by):''}</span>` : ''}
+        ${downtime >= threshold ? `<span style="font-size:.8rem;font-weight:700;color:var(--danger)">⚠ Disabled ${downtime} days</span>` : ''}
+      </div>`;
+
+    const content = document.getElementById('detail-content');
+
+    // Build location select options
+    const official = locs.filter(l => !l.isCustom);
+    const custom   = locs.filter(l =>  l.isCustom);
+    const bySite = {};
+    official.forEach(l => { (bySite[l.siteName]=bySite[l.siteName]||[]).push(l); });
+    let locOpts = '<option value="">-- Select Location --</option>';
+    Object.entries(bySite).forEach(([site, items]) => {
+      locOpts += `<optgroup label="${san(site)}">`;
+      items.forEach(l => { locOpts += `<option value="${san(l.id)}" ${l.id===st.locationId?'selected':''}>${san(l.siteName)} — ${san(l.subLocation)}</option>`; });
+      locOpts += '</optgroup>';
+    });
+    if (custom.length) {
+      locOpts += '<optgroup label="— Custom —">';
+      custom.forEach(l => { locOpts += `<option value="${san(l.id)}" ${l.id===st.locationId?'selected':''}>${san(l.siteName)} — ${san(l.subLocation)}</option>`; });
+      locOpts += '</optgroup>';
+    }
+    locOpts += '<option value="__other__">Other (specify)…</option>';
+
+    // Status options
+    const canSetStatus = hasRole('user','supervisor','admin');
+    const allowedStatuses = user.role === 'user' ? ['Onsite','Deployed'] : ['Onsite','Deployed','Disabled'];
+    const statusOpts = allowedStatuses.map(s => `<option value="${s}" ${st.status===s?'selected':''}>${s}</option>`).join('');
+
+    // Workshop actions
+    const workshopSection = isTech ? `
+      <div class="sec-card">
+        <div class="sec-title">Workshop Actions</div>
+        <div class="action-btns">
+          ${canRelease && job ? `
+            <button class="btn btn-warning" id="btn-intake" ${job.jobStatus==='Flagged'?'':'style="display:none"'}>Intake to Workshop</button>
+            <button class="btn btn-success" id="btn-release" ${job.jobStatus==='Ready for Release'?'':'disabled'}>Release from Workshop</button>
+          ` : canRelease ? `
+            <button class="btn btn-warning" id="btn-intake">Intake to Workshop</button>
+          ` : ''}
+          <button class="btn btn-orange" id="btn-flag" style="background:var(--orange);color:#fff" ${job?'disabled title="Already has active job"':''}>Flag as Unserviceable</button>
+        </div>
+        ${job ? `<p style="margin-top:.85rem;font-size:.875rem;color:var(--warn-t);font-weight:600">⚠ Active job: ${san(job.jobStatus)} · ${san(job.priority)} priority${job.assignedTech?' · Assigned: '+san(job.assignedTech.displayName):''}</p>` : ''}
+      </div>` : '';
+
+    // Service log (tech/supervisor/admin)
+    const logSection = isTech ? `
+      <div class="sec-card">
+        <div class="sec-title">Log a Service</div>
+        <div class="fg">
+          <label>Service Performed</label>
+          <div class="svc-wrap">
+            <input type="text" id="svc-inp" placeholder="Type to search…" autocomplete="off">
+            <ul class="svc-drop" id="svc-drop"></ul>
+          </div>
+          <div id="svc-lbl" class="svc-sel-label"></div>
+          <input type="hidden" id="svc-id"><input type="hidden" id="svc-name">
+        </div>
+        <div class="fg"><label for="svc-notes">Notes <span style="font-weight:400;color:var(--muted)">(optional)</span></label><textarea id="svc-notes" rows="2" placeholder="Any additional details…"></textarea></div>
+        <button class="btn btn-primary" id="btn-log-svc">Log Service Entry</button>
+      </div>` : '';
+
+    // Service history
+    const logEntries = a.serviceLog || [];
+    const historyHtml = logEntries.length === 0
+      ? '<p style="color:var(--muted);font-size:.875rem">No service history recorded yet.</p>'
+      : logEntries.map(e => `
+          <div class="log-entry">
+            <div>
+              <div class="log-svc">${san(e.serviceName)}${e.workshopJobId?`<span class="job-tag">Job</span>`:''}</div>
+              <div class="log-by">${san(e.loggedByName)} (${san(e.loggedByRole)})${e.notes?' · '+san(e.notes):''}</div>
+            </div>
+            <div class="log-time">${fmtDT(e.timestamp)}</div>
+          </div>`).join('');
+
+    // Attributes section
+    const attrsSection = `
+      <div class="sec-card">
+        <div class="sec-title">Asset Attributes</div>
+        <div class="fg">
+          <label for="inp-loc">Location</label>
+          <select id="inp-loc">${locOpts}</select>
+          <div class="loc-other-wrap" id="other-wrap">
+            <input type="text" id="inp-other-loc" placeholder="e.g. Remote Drill Site 7" style="margin-top:.5rem">
+          </div>
+        </div>
+        ${canSetStatus ? `<div class="fg"><label for="inp-status">Status</label><select id="inp-status">${statusOpts}</select></div>` : `<div class="fg"><label>Status</label><div style="padding:.6rem 0">${statusBadge(st.status, st.flagged)}</div></div>`}
+        <div class="fg" style="margin-bottom:0"><label for="inp-msg">Message <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input type="text" id="inp-msg" value="${san(st.message||'')}" placeholder="Operational note"></div>
+        <button class="btn btn-primary" id="btn-save" style="margin-top:1rem">Save Changes</button>
+      </div>`;
+
+    // For tech: log section first, then attrs
+    const isTechRole = user.role === 'tech';
+    content.innerHTML = `
+      <button class="btn btn-secondary btn-sm" id="btn-back" style="margin-bottom:1rem">← Back</button>
+      ${isTechRole ? logSection + attrsSection : attrsSection + workshopSection + logSection}
+      ${!isTechRole ? '' : workshopSection}
+      <div class="sec-card">
+        <div class="sec-title">Service History (${logEntries.length})</div>
+        ${historyHtml}
+      </div>`;
+
+    // Back
+    content.querySelector('#btn-back').addEventListener('click', () => showView('dashboard'));
+
+    // Location "Other" toggle
+    const locSel = document.getElementById('inp-loc');
+    const otherWrap = document.getElementById('other-wrap');
+    if (locSel) {
+      locSel.addEventListener('change', () => {
+        otherWrap.classList.toggle('show', locSel.value === '__other__');
+      });
+    }
+
+    // Save
+    document.getElementById('btn-save').addEventListener('click', async () => {
+      let locationId = locSel?.value || null;
+      let customLocation = null;
+      if (locationId === '__other__') {
+        customLocation = document.getElementById('inp-other-loc')?.value.trim();
+        if (!customLocation) { showToast('Please enter a custom location', 'error'); return; }
+        locationId = null;
+      } else if (!locationId) { locationId = null; }
+      const status  = document.getElementById('inp-status')?.value || st.status;
+      const message = document.getElementById('inp-msg')?.value.trim() || '';
+      if (status === 'Deployed' && !locationId && !customLocation) { showToast('Location is required when deploying', 'error'); return; }
+      try {
+        await api('PATCH', `/assets/${assetId}/state`, { locationId, customLocation, status });
+        showToast('Asset updated');
+        renderAssetDetail({ assetId });
+      } catch(err) { showToast(err.message, 'error'); }
+    });
+
+    // Workshop actions
+    if (isTech) {
+      initSvcSearch('svc-inp','svc-drop','svc-lbl','svc-id','svc-name');
+
+      document.getElementById('btn-log-svc')?.addEventListener('click', async () => {
+        const serviceId   = document.getElementById('svc-id').value;
+        const serviceName = document.getElementById('svc-name').value;
+        const notes       = document.getElementById('svc-notes')?.value.trim();
+        if (!serviceId) { showToast('Please select a service first', 'error'); return; }
+        try {
+          await api('POST', `/assets/${assetId}/log`, { serviceId, serviceName, notes });
+          showToast('Service logged');
+          renderAssetDetail({ assetId });
+        } catch(err) { showToast(err.message, 'error'); }
+      });
+
+      document.getElementById('btn-flag')?.addEventListener('click', async () => {
+        const reason = window.prompt('Reason for flagging this asset as unserviceable:');
+        if (!reason?.trim()) return;
+        try {
+          await api('POST', `/assets/${assetId}/flag`, { reason });
+          showToast('Asset flagged — awaiting workshop intake');
+          renderAssetDetail({ assetId });
+        } catch(err) { showToast(err.message, 'error'); }
+      });
+
+      if (canRelease) {
+        document.getElementById('btn-intake')?.addEventListener('click', () => showView('workshop'));
+        document.getElementById('btn-release')?.addEventListener('click', async () => {
+          if (!job) return;
+          if (!confirm('Release this asset from workshop? Status will be set to Onsite.')) return;
+          // For release, redirect to workshop board for full control
+          showView('workshop');
+        });
+      }
+    }
+  } catch(err) { showToast(err.message, 'error'); }
+}
+
+// ── J: WORKSHOP BOARD ─────────────────────────────────────────────────────────
+async function renderWorkshop() {
+  const user = getUser(); if (!user) { showView('login'); return; }
+  if (!hasRole('supervisor','admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-ws', 'Workshop Board', { showAdminNav: user.role==='admin', showWsBtn: false });
+
+  const el = document.getElementById('ws-content');
+  try {
+    const [jobs, users, locs] = await Promise.all([
+      api('GET', '/workshop'),
+      api('GET', '/users/techs'),
+      api('GET', '/locations')
+    ]);
+
+    const techOpts = users.map(u => `<option value="${san(u.id)}">${san(u.displayName)}</option>`).join('');
+    const workshopLocs = locs.filter(l => l.subLocation.toLowerCase().includes('workshop'));
+    const wsLocOpts = workshopLocs.map(l => `<option value="${san(l.id)}">${san(l.siteName)} — ${san(l.subLocation)}</option>`).join('');
+
+    // Workload panel
+    const workload = {};
+    users.forEach(u => { workload[u.id] = { name: u.displayName, count: 0 }; });
+    jobs.forEach(j => { if (j.assignedTech) workload[j.assignedTech.id] = workload[j.assignedTech.id] || { name: j.assignedTech.displayName, count: 0 }; workload[j.assignedTech?.id]?.count !== undefined && (workload[j.assignedTech.id].count++); });
+
+    const wlHtml = Object.values(workload).filter(w => w.count > 0).map(w => `<div class="tech-row"><span>${san(w.name)}</span><span class="badge-job">${w.count} job${w.count!==1?'s':''}</span></div>`).join('') || '<p style="color:var(--muted);font-size:.875rem">No active assignments</p>';
+
+    el.innerHTML = `
+      <div class="adm-hdr">
+        <h2>Workshop Jobs (${jobs.length} active)</h2>
+        <button class="btn btn-secondary btn-sm" id="btn-back-ws">← Dashboard</button>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-hdr">Intake Asset to Workshop</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>Asset Serial / VIN</label><input type="text" id="ws-intake-serial" placeholder="Type serial to search…"></div>
+            <div class="fg"><label>Workshop Location</label><select id="ws-intake-loc"><option value="">Select location…</option>${wsLocOpts}</select></div>
+            <div class="fg"><label>Assign Technician</label><select id="ws-intake-tech"><option value="">Unassigned</option>${techOpts}</select></div>
+            <div class="fg"><label>Priority</label><select id="ws-intake-priority"><option value="Normal">Normal</option><option value="Urgent">Urgent</option><option value="Scheduled">Scheduled</option></select></div>
+          </div>
+          <div id="ws-intake-err" class="err-msg hidden"></div>
+          <button class="btn btn-warning" id="btn-do-intake" style="margin-top:.75rem">Intake Asset</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start">
+        <div id="ws-jobs-list">${jobs.length===0?'<div style="text-align:center;padding:3rem 1rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:.75rem">🔧</div><p>No active workshop jobs</p></div>':jobs.map(j => wsJobCard(j, techOpts)).join('')}</div>
+        <div class="ws-tech-panel" style="min-width:180px;display:none" id="ws-workload-panel">
+          <h4>Technician Workload</h4>
+          ${wlHtml}
+        </div>
+      </div>`;
+
+    if (Object.values(workload).some(w => w.count > 0)) {
+      document.getElementById('ws-workload-panel').style.display = '';
+    }
+
+    el.querySelector('#btn-back-ws').addEventListener('click', () => showView('dashboard'));
+
+    // Intake
+    el.querySelector('#btn-do-intake').addEventListener('click', async () => {
+      const serial  = document.getElementById('ws-intake-serial').value.trim();
+      const locId   = document.getElementById('ws-intake-loc').value;
+      const techId  = document.getElementById('ws-intake-tech').value || null;
+      const priority = document.getElementById('ws-intake-priority').value;
+      const errEl   = document.getElementById('ws-intake-err');
+      if (!serial) { errEl.textContent='Enter a serial/VIN'; errEl.classList.remove('hidden'); return; }
+      if (!locId)  { errEl.textContent='Select a workshop location'; errEl.classList.remove('hidden'); return; }
+      try {
+        // find asset by serial
+        const assets = await api('GET', '/assets');
+        const found  = assets.find(a => a.serial.toLowerCase() === serial.toLowerCase());
+        if (!found) { errEl.textContent=`No asset found with serial "${serial}"`; errEl.classList.remove('hidden'); return; }
+        await api('POST', '/workshop', { assetId: found.id, assignedTechId: techId, priority, locationId: locId });
+        showToast('Asset intaked to workshop');
+        renderWorkshop();
+      } catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+
+    // Job card interactions
+    attachWsHandlers(el, techOpts);
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+function wsJobCard(j, techOpts) {
+  const jobStatuses = ['Flagged','Waiting','In Progress','Awaiting Parts','Ready for Release'];
+  const statusOpts  = jobStatuses.map(s => `<option value="${san(s)}" ${j.jobStatus===s?'selected':''}>${san(s)}</option>`).join('');
+  const techOptsSel = `<option value="">Unassigned</option>` + (techOpts||'').replace(j.assignedTech ? `value="${j.assignedTech.id}"` : 'NOMATCH', m => m + ' selected');
+  const logHtml = j.serviceLog?.length
+    ? j.serviceLog.map(e => `<div class="log-entry"><div><div class="log-svc">${san(e.serviceName)}</div><div class="log-by">${san(e.loggedByName)} (${san(e.loggedByRole)})${e.notes?' · '+san(e.notes):''}</div></div><div class="log-time">${fmtDT(e.timestamp)}</div></div>`).join('')
+    : '<p style="color:var(--muted);font-size:.875rem">No services logged for this job yet.</p>';
+
+  return `
+    <div class="ws-job priority-${san(j.priority)}" data-job-id="${san(j.id)}">
+      <div class="ws-job-hdr">
+        <div>
+          <div class="ws-serial">${san(j.asset?.serial)}</div>
+          <div class="ws-desc">${san(j.asset?.description)}</div>
+          <div class="ws-meta">${j.assignedTech?'Assigned: '+san(j.assignedTech.displayName):'Unassigned'} · ${j.daysInShop}d in shop · Intake: ${fmtD(j.intakeAt||j.createdAt)}</div>
+        </div>
+        <div class="ws-badges">
+          ${jobStatusBadge(j.jobStatus)}
+          ${priorityBadge(j.priority)}
+          <button class="btn btn-secondary btn-sm btn-expand-job">Details ▾</button>
+        </div>
+      </div>
+      <div class="ws-detail" id="jd-${san(j.id)}">
+        <div class="form-row" style="margin-bottom:.75rem">
+          <div class="fg"><label>Job Status</label><select class="js-status">${statusOpts}</select></div>
+          <div class="fg"><label>Priority</label><select class="js-priority"><option value="Urgent" ${j.priority==='Urgent'?'selected':''}>Urgent</option><option value="Normal" ${j.priority==='Normal'?'selected':''}>Normal</option><option value="Scheduled" ${j.priority==='Scheduled'?'selected':''}>Scheduled</option></select></div>
+          <div class="fg"><label>Assigned Tech</label><select class="js-tech"><option value="">Unassigned</option>${(techOpts||'').replace(`value="${san(j.assignedTech?.id)}"`,`value="${san(j.assignedTech?.id)}" selected`)}</select></div>
+        </div>
+        <div class="fg" style="margin-bottom:.75rem"><label>Parts / Notes</label><textarea class="js-parts" rows="2" placeholder="Parts needed, waiting on, etc.">${san(j.partsNotes||'')}</textarea></div>
+        <button class="btn btn-primary btn-sm btn-update-job">Save Changes</button>
+        ${j.jobStatus==='Ready for Release'?`<button class="btn btn-success btn-sm btn-release-job" style="margin-left:.5rem">Release Asset</button>`:''}
+
+        <div style="margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem">
+          <div class="sec-title" style="margin-bottom:.75rem">Job Service Log</div>
+          <div class="job-log-entries">${logHtml}</div>
+          <div class="fg" style="margin-top:.75rem">
+            <label>Log Service for this Job</label>
+            <div class="svc-wrap">
+              <input type="text" class="js-svc-inp" placeholder="Search services…" autocomplete="off">
+              <ul class="svc-drop js-svc-drop"></ul>
+            </div>
+            <div class="js-svc-lbl svc-sel-label"></div>
+            <input type="hidden" class="js-svc-id"><input type="hidden" class="js-svc-name">
+          </div>
+          <div class="fg"><label>Notes</label><textarea class="js-log-notes" rows="2" placeholder="Optional notes…"></textarea></div>
+          <button class="btn btn-primary btn-sm btn-log-job-svc">Log Service</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function attachWsHandlers(el, techOpts) {
+  el.querySelectorAll('.btn-expand-job').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const jobEl  = btn.closest('.ws-job');
+      const detail = jobEl.querySelector('.ws-detail');
+      detail.classList.toggle('open');
+      btn.textContent = detail.classList.contains('open') ? 'Close ▴' : 'Details ▾';
+      if (detail.classList.contains('open')) {
+        // Init service search for this job
+        const inp  = detail.querySelector('.js-svc-inp');
+        const drop = detail.querySelector('.js-svc-drop');
+        const lbl  = detail.querySelector('.js-svc-lbl');
+        const hid  = detail.querySelector('.js-svc-id');
+        const hn   = detail.querySelector('.js-svc-name');
+        if (inp && !inp.dataset.init) {
+          inp.dataset.init = '1';
+          async function rebuild(filter) {
+            const svcs = await api('GET','/services').catch(() => []);
+            const list = svcs.filter(s => s.active && (!filter||s.name.toLowerCase().includes(filter.toLowerCase())));
+            if (!list.length) { drop.innerHTML = '<li class="no-res">No matching services</li>'; }
+            else {
+              drop.innerHTML = list.map(s => `<li data-id="${san(s.id)}" data-name="${san(s.name)}">${san(s.name)}</li>`).join('');
+              drop.querySelectorAll('li[data-id]').forEach(li => {
+                li.addEventListener('mousedown', e => { e.preventDefault(); hid.value=li.dataset.id; hn.value=li.dataset.name; inp.value=li.dataset.name; if(lbl) lbl.textContent='✓ '+li.dataset.name; drop.classList.remove('open'); });
+              });
+            }
+            drop.classList.add('open');
+          }
+          inp.addEventListener('input', () => rebuild(inp.value));
+          inp.addEventListener('focus', () => rebuild(inp.value));
+          inp.addEventListener('blur',  () => setTimeout(() => drop.classList.remove('open'), 150));
+        }
+      }
+    });
+  });
+
+  el.querySelectorAll('.btn-update-job').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const jobEl = btn.closest('.ws-job');
+      const jobId = jobEl.dataset.jobId;
+      const jobStatus      = jobEl.querySelector('.js-status').value;
+      const priority       = jobEl.querySelector('.js-priority').value;
+      const assignedTechId = jobEl.querySelector('.js-tech').value || null;
+      const partsNotes     = jobEl.querySelector('.js-parts').value;
+      try {
+        await api('PATCH', `/workshop/${jobId}`, { jobStatus, priority, assignedTechId, partsNotes });
+        showToast('Job updated');
+        renderWorkshop();
+      } catch(err) { showToast(err.message,'error'); }
+    });
+  });
+
+  el.querySelectorAll('.btn-release-job').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const jobId = btn.closest('.ws-job').dataset.jobId;
+      const newLoc = window.prompt('Enter new location for released asset (e.g. "Main Depot — Parking Bay"):');
+      if (!newLoc?.trim()) return;
+      if (!confirm(`Release asset and set location to "${newLoc}"?`)) return;
+      // Try to match a known location
+      const locs = await api('GET','/locations').catch(()=>[]);
+      const found = locs.find(l => `${l.siteName} — ${l.subLocation}`.toLowerCase() === newLoc.toLowerCase());
+      try {
+        await api('POST', `/workshop/${jobId}/release`, found ? { locationId: found.id } : { customLocation: newLoc });
+        showToast('Asset released from workshop');
+        renderWorkshop();
+      } catch(err) { showToast(err.message,'error'); }
+    });
+  });
+
+  el.querySelectorAll('.btn-log-job-svc').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const jobEl = btn.closest('.ws-job');
+      const jobId = jobEl.dataset.jobId;
+      const serviceId   = jobEl.querySelector('.js-svc-id').value;
+      const serviceName = jobEl.querySelector('.js-svc-name').value;
+      const notes       = jobEl.querySelector('.js-log-notes').value.trim();
+      if (!serviceId) { showToast('Please select a service first','error'); return; }
+      try {
+        await api('POST', `/workshop/${jobId}/log`, { serviceId, serviceName, notes });
+        showToast('Service logged against job');
+        renderWorkshop();
+      } catch(err) { showToast(err.message,'error'); }
+    });
+  });
+}
+
+// ── K: ADMIN USERS ────────────────────────────────────────────────────────────
+async function renderAdminUsers() {
+  if (!hasRole('admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-au','User Management',{showAdminNav:true});
+  const el = document.getElementById('au-content');
+  try {
+    const users = await api('GET','/users');
+    const myId  = getUser()?.id;
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Users (${users.length})</h2><button class="btn btn-secondary btn-sm" id="btn-back-au">← Dashboard</button></div>
+      <div class="card">
+        <div class="card-hdr">Add New User</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>Username</label><input type="text" id="nu-un" placeholder="username"></div>
+            <div class="fg"><label>Display Name</label><input type="text" id="nu-dn" placeholder="Full name"></div>
+            <div class="fg"><label>Password</label><input type="password" id="nu-pw" placeholder="Password"></div>
+            <div class="fg"><label>Role</label><select id="nu-role"><option value="user">User</option><option value="tech">Technician</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option></select></div>
+          </div>
+          <div id="au-err" class="err-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-add-user" style="margin-top:.5rem">Add User</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">All Users</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Username</th><th>Display Name</th><th>Role</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${users.map(u => `
+              <tr data-uid="${san(u.id)}">
+                <td><strong>${san(u.username)}</strong>${u.id===myId?' <span style="font-size:.72rem;color:var(--accent)">(you)</span>':''}</td>
+                <td>${san(u.displayName)}</td>
+                <td><span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.7rem">${san(ROLE_LABELS[u.role]||u.role)}</span></td>
+                <td><div class="row-acts">
+                  <button class="btn btn-secondary btn-sm btn-edit-u" data-uid="${san(u.id)}">Edit</button>
+                  <button class="btn btn-danger btn-sm btn-del-u" data-uid="${san(u.id)}" ${u.id===myId?'disabled title="Cannot delete your own account"':''}>Delete</button>
+                </div></td>
+              </tr>
+              <tr class="edit-urow hidden" id="eu-${san(u.id)}">
+                <td colspan="4" style="background:var(--surface2);padding:1rem 1.25rem">
+                  <div class="form-row">
+                    <div class="fg"><label>Display Name</label><input type="text" id="en-${san(u.id)}" value="${san(u.displayName)}"></div>
+                    <div class="fg"><label>New Password <span style="font-weight:400;color:var(--muted)">(blank = keep)</span></label><input type="password" id="ep-${san(u.id)}" placeholder="New password"></div>
+                    <div class="fg"><label>Role</label><select id="er-${san(u.id)}"><option value="user" ${u.role==='user'?'selected':''}>User</option><option value="tech" ${u.role==='tech'?'selected':''}>Technician</option><option value="supervisor" ${u.role==='supervisor'?'selected':''}>Supervisor</option><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option></select></div>
+                  </div>
+                  <div style="display:flex;gap:.5rem;margin-top:.5rem">
+                    <button class="btn btn-primary btn-sm btn-save-eu" data-uid="${san(u.id)}">Save</button>
+                    <button class="btn btn-secondary btn-sm btn-cancel-eu" data-uid="${san(u.id)}">Cancel</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+
+    el.querySelector('#btn-back-au').addEventListener('click', () => showView('dashboard'));
+    el.querySelector('#btn-add-user').addEventListener('click', async () => {
+      const un = document.getElementById('nu-un').value.trim();
+      const dn = document.getElementById('nu-dn').value.trim();
+      const pw = document.getElementById('nu-pw').value;
+      const role = document.getElementById('nu-role').value;
+      const errEl = document.getElementById('au-err');
+      try { await api('POST','/users',{username:un,displayName:dn,password:pw,role}); showToast('User added'); renderAdminUsers(); }
+      catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+    el.querySelectorAll('.btn-edit-u').forEach(b => b.addEventListener('click', () => document.getElementById('eu-'+b.dataset.uid).classList.toggle('hidden')));
+    el.querySelectorAll('.btn-cancel-eu').forEach(b => b.addEventListener('click', () => document.getElementById('eu-'+b.dataset.uid).classList.add('hidden')));
+    el.querySelectorAll('.btn-save-eu').forEach(b => b.addEventListener('click', async () => {
+      const uid = b.dataset.uid;
+      const dn  = document.getElementById('en-'+uid).value.trim();
+      const pw  = document.getElementById('ep-'+uid).value;
+      const role= document.getElementById('er-'+uid).value;
+      const body = { displayName:dn, role };
+      if (pw) body.password = pw;
+      try { const u = await api('PATCH','/users/'+uid,body); if (uid===myId) setUser({...getUser(),...u}); showToast('User updated'); renderAdminUsers(); }
+      catch(err) { showToast(err.message,'error'); }
+    }));
+    el.querySelectorAll('.btn-del-u').forEach(b => b.addEventListener('click', async () => {
+      const u = users.find(x => x.id===b.dataset.uid);
+      if (!u || !confirm(`Delete "${u.displayName}" (${u.username})? This cannot be undone.`)) return;
+      try { await api('DELETE','/users/'+u.id); showToast('User deleted'); renderAdminUsers(); }
+      catch(err) { showToast(err.message,'error'); }
+    }));
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── L: ADMIN ASSETS ───────────────────────────────────────────────────────────
+async function renderAdminAssets() {
+  if (!hasRole('admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-aa','Asset Registration',{showAdminNav:true});
+  const el = document.getElementById('aa-content');
+  try {
+    const assets = await api('GET','/assets');
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Assets (${assets.length})</h2><button class="btn btn-secondary btn-sm" id="btn-back-aa">← Dashboard</button></div>
+      <div class="card">
+        <div class="card-hdr">Register New Asset</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>Serial / VIN</label><input type="text" id="na-ser" placeholder="e.g. CAT320-0042"></div>
+            <div class="fg" style="flex:2"><label>Description</label><input type="text" id="na-desc" placeholder="e.g. CAT 320 Excavator — Unit 4"></div>
+          </div>
+          <div id="aa-err" class="err-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-add-asset" style="margin-top:.5rem">Register Asset</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">All Assets</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Serial / VIN</th><th>Description</th><th>Status</th><th>Location</th><th>Registered</th></tr></thead>
+          <tbody>
+            ${assets.length===0?'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No assets yet</td></tr>':
+              assets.map(a => `<tr><td><strong>${san(a.serial)}</strong></td><td>${san(a.description)}</td><td>${statusBadge(a.state?.status,a.state?.flagged)}</td><td>${san(a.state?.locationDisplay||'—')}</td><td>${fmtD(a.registeredAt)}</td></tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+    el.querySelector('#btn-back-aa').addEventListener('click', () => showView('dashboard'));
+    el.querySelector('#btn-add-asset').addEventListener('click', async () => {
+      const serial = document.getElementById('na-ser').value.trim();
+      const desc   = document.getElementById('na-desc').value.trim();
+      const errEl  = document.getElementById('aa-err');
+      try { await api('POST','/assets',{serial,description:desc}); showToast('Asset registered'); renderAdminAssets(); }
+      catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── M: ADMIN SERVICES ─────────────────────────────────────────────────────────
+async function renderAdminServices() {
+  if (!hasRole('admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-as','Service Catalog',{showAdminNav:true});
+  const el = document.getElementById('as-content');
+  try {
+    const svcs   = await api('GET','/services');
+    const active = svcs.filter(s => s.active);
+    const inactive=svcs.filter(s => !s.active);
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Services (${active.length} active)</h2><button class="btn btn-secondary btn-sm" id="btn-back-as">← Dashboard</button></div>
+      <div class="card">
+        <div class="card-hdr">Add New Service</div>
+        <div class="card-body">
+          <div class="form-inline">
+            <div class="fg"><label>Service Name</label><input type="text" id="ns-name" placeholder="e.g. Hydraulic Hose Replacement"></div>
+            <div><button class="btn btn-primary" id="btn-add-svc" style="margin-top:1.5rem">Add</button></div>
+          </div>
+          <div id="as-err" class="err-msg hidden" style="margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Active Services</div>
+        <div class="card-body">
+          ${active.length===0?'<p style="color:var(--muted)">No active services.</p>':active.map(s=>`<div class="svc-item"><span class="svc-name">${san(s.name)}</span><button class="btn btn-danger btn-sm btn-deact" data-id="${san(s.id)}">Remove</button></div>`).join('')}
+        </div>
+        ${inactive.length>0?`<div class="card-body" style="border-top:1px solid var(--border)"><details><summary>Removed services (${inactive.length})</summary><div style="margin-top:.75rem">${inactive.map(s=>`<div class="svc-item"><span class="svc-removed">${san(s.name)}</span><button class="btn btn-secondary btn-sm btn-react" data-id="${san(s.id)}">Restore</button></div>`).join('')}</div></details></div>`:''}
+      </div>`;
+    el.querySelector('#btn-back-as').addEventListener('click', () => showView('dashboard'));
+    el.querySelector('#btn-add-svc').addEventListener('click', async () => {
+      const name = document.getElementById('ns-name').value.trim();
+      const errEl = document.getElementById('as-err');
+      try { await api('POST','/services',{name}); showToast('Service added'); renderAdminServices(); }
+      catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+    el.querySelectorAll('.btn-deact').forEach(b => b.addEventListener('click', async () => {
+      const s = svcs.find(x=>x.id===b.dataset.id);
+      if (!s || !confirm(`Remove "${s.name}"? Existing log entries will be preserved.`)) return;
+      try { await api('PATCH','/services/'+s.id,{active:false}); showToast('Service removed'); renderAdminServices(); }
+      catch(err) { showToast(err.message,'error'); }
+    }));
+    el.querySelectorAll('.btn-react').forEach(b => b.addEventListener('click', async () => {
+      try { await api('PATCH','/services/'+b.dataset.id,{active:true}); showToast('Service restored'); renderAdminServices(); }
+      catch(err) { showToast(err.message,'error'); }
+    }));
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── N: ADMIN LOCATIONS ────────────────────────────────────────────────────────
+async function renderAdminLocations() {
+  if (!hasRole('admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-al','Locations',{showAdminNav:true});
+  const el = document.getElementById('al-content');
+  try {
+    const locs = await api('GET','/locations');
+    const official = locs.filter(l=>!l.isCustom);
+    const custom   = locs.filter(l=> l.isCustom);
+    const bySite = {};
+    official.forEach(l => { (bySite[l.siteName]=bySite[l.siteName]||[]).push(l); });
+
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Locations (${official.length} official, ${custom.length} custom)</h2><button class="btn btn-secondary btn-sm" id="btn-back-al">← Dashboard</button></div>
+      <div class="card">
+        <div class="card-hdr">Add Official Location</div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>Site Name</label><input type="text" id="nl-site" placeholder="e.g. East Yard"></div>
+            <div class="fg"><label>Sub-location</label><input type="text" id="nl-sub" placeholder="e.g. Workshop"></div>
+          </div>
+          <div id="al-err" class="err-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-add-loc" style="margin-top:.5rem">Add Location</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Official Locations</div>
+        <div class="card-body">
+          ${Object.entries(bySite).map(([site,items])=>`
+            <div style="margin-bottom:1rem">
+              <div style="font-weight:700;font-size:.9rem;color:var(--navy);margin-bottom:.5rem">${san(site)}</div>
+              ${items.map(l=>`<div class="svc-item" style="padding-left:1rem"><span class="svc-name">${san(l.subLocation)}</span></div>`).join('')}
+            </div>`).join('')}
+        </div>
+        ${custom.length>0?`<div class="card-body" style="border-top:1px solid var(--border)"><details><summary>Custom / User-contributed locations (${custom.length})</summary><div style="margin-top:.75rem">${custom.map(l=>`<div class="svc-item"><span class="svc-name">${san(l.siteName)} — ${san(l.subLocation)}</span><button class="btn btn-secondary btn-sm btn-promote-loc" data-id="${san(l.id)}">Promote to Official</button></div>`).join('')}</div></details></div>`:''}
+      </div>`;
+
+    el.querySelector('#btn-back-al').addEventListener('click', () => showView('dashboard'));
+    el.querySelector('#btn-add-loc').addEventListener('click', async () => {
+      const site = document.getElementById('nl-site').value.trim();
+      const sub  = document.getElementById('nl-sub').value.trim();
+      const errEl= document.getElementById('al-err');
+      try { await api('POST','/locations',{siteName:site,subLocation:sub}); showToast('Location added'); renderAdminLocations(); }
+      catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+    el.querySelectorAll('.btn-promote-loc').forEach(b => b.addEventListener('click', async () => {
+      try { await api('PATCH','/locations/'+b.dataset.id,{isCustom:false}); showToast('Location promoted to official'); renderAdminLocations(); }
+      catch(err) { showToast(err.message,'error'); }
+    }));
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── O: ADMIN SETTINGS ─────────────────────────────────────────────────────────
+async function renderAdminSettings() {
+  if (!hasRole('admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-aset','App Settings',{showAdminNav:true});
+  const el = document.getElementById('aset-content');
+  try {
+    const settings = await api('GET','/settings');
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Settings</h2><button class="btn btn-secondary btn-sm" id="btn-back-aset">← Dashboard</button></div>
+      <div class="card">
+        <div class="card-hdr">Operational Thresholds</div>
+        <div class="card-body">
+          <div class="fg" style="max-width:300px">
+            <label for="set-downtime">Downtime Warning Threshold (days)</label>
+            <input type="text" id="set-downtime" value="${san(String(settings.downtimeWarningDays))}" placeholder="5">
+            <p style="font-size:.8rem;color:var(--muted);margin-top:.35rem">Assets disabled longer than this will show a warning on the dashboard and fleet reports.</p>
+          </div>
+          <div id="aset-err" class="err-msg hidden"></div>
+          <button class="btn btn-primary" id="btn-save-settings" style="margin-top:.25rem">Save Settings</button>
+        </div>
+      </div>`;
+    el.querySelector('#btn-back-aset').addEventListener('click', () => showView('dashboard'));
+    el.querySelector('#btn-save-settings').addEventListener('click', async () => {
+      const val   = parseInt(document.getElementById('set-downtime').value, 10);
+      const errEl = document.getElementById('aset-err');
+      if (isNaN(val)||val<1) { errEl.textContent='Enter a valid number of days (minimum 1)'; errEl.classList.remove('hidden'); return; }
+      try { await api('PATCH','/settings',{downtimeWarningDays:val}); showToast('Settings saved'); }
+      catch(err) { errEl.textContent=err.message; errEl.classList.remove('hidden'); }
+    });
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── P: ADMIN REPORTS ──────────────────────────────────────────────────────────
+async function renderAdminReports() {
+  if (!hasRole('supervisor','admin')) { showView('dashboard'); return; }
+  renderHeader('hdr-ar','Reports',{showAdminNav:hasRole('admin'), showWsBtn:true});
+  const el = document.getElementById('ar-content');
+  try {
+    const [dash, audit] = await Promise.all([api('GET','/reports/dashboard'), api('GET','/reports/audit?limit=100')]);
+    const { stats, downtimeAssets, complianceAssets } = dash;
+
+    el.innerHTML = `
+      <div class="adm-hdr"><h2>Fleet Reports</h2>
+        <div style="display:flex;gap:.5rem">
+          <a href="/api/reports/fleet/export" class="btn btn-secondary btn-sm" download>↓ Fleet CSV</a>
+          <a href="/api/reports/audit/export" class="btn btn-secondary btn-sm" download>↓ Audit CSV</a>
+          <button class="btn btn-secondary btn-sm" id="btn-back-ar">← Dashboard</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num">${stats.total}</div><div class="stat-label">Total Assets</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--ok)">${stats.operational}</div><div class="stat-label">Operational</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${stats.inWorkshop}</div><div class="stat-label">In Workshop</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${stats.disabled}</div><div class="stat-label">Disabled</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--orange)">${stats.flagged}</div><div class="stat-label">Flagged</div></div>
+      </div>
+
+      ${downtimeAssets.length>0?`<div class="card">
+        <div class="card-hdr" style="color:var(--danger)">⚠ Extended Downtime (${downtimeAssets.length})</div>
+        <div class="card-body">${downtimeAssets.map(a=>`<div class="warn-row"><span><strong>${san(a.serial)}</strong> · ${san(a.description)}</span><span class="warn-days">${a.daysDisabled} days</span></div>`).join('')}</div>
+      </div>`:''}
+
+      ${complianceAssets.length>0?`<div class="card">
+        <div class="card-hdr" style="color:var(--warn)">⏱ No Service in 90+ Days (${complianceAssets.length})</div>
+        <div class="card-body">${complianceAssets.map(a=>`<div class="warn-row"><span><strong>${san(a.serial)}</strong> · ${san(a.description)}</span><span style="color:var(--muted);font-size:.8rem">${a.lastServiceDate?'Last: '+fmtD(a.lastServiceDate):'Never serviced'}</span></div>`).join('')}</div>
+      </div>`:''}
+
+      <div class="card">
+        <div class="card-hdr">Audit Log (last 100 entries)</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Entity</th></tr></thead>
+          <tbody>
+            ${audit.length===0?'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No audit entries yet</td></tr>':
+              audit.map(e=>`<tr><td style="font-size:.8rem;white-space:nowrap">${fmtDT(e.timestamp)}</td><td>${san(e.userName)}</td><td><span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.68rem">${san(ROLE_LABELS[e.userRole]||e.userRole)}</span></td><td style="font-size:.85rem">${san(e.action)}</td><td style="font-size:.8rem;color:var(--muted)">${san(e.entityType||'')} ${san(e.entityId||'')}</td></tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+
+    el.querySelector('#btn-back-ar').addEventListener('click', () => showView('dashboard'));
+  } catch(err) { showToast(err.message,'error'); }
+}
+
+// ── Q: INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Verify token still valid, then route
+  const token = localStorage.getItem('fleet_jwt');
+  const user  = getUser();
+  if (token && user) {
+    api('GET','/auth/me').then(u => { setUser(u); showView('dashboard'); }).catch(() => showView('login'));
+  } else {
+    showView('login');
+  }
+});
+</script>
+</body>
+</html>
