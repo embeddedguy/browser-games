@@ -1,8 +1,8 @@
 # Fleet Asset Manager — Product Requirements Document (PRD)
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Status:** Approved for development  
-**Last updated:** 2026-03-30  
+**Last updated:** 2026-04-01  
 **Audience:** Development team, QA/testing team
 
 ---
@@ -76,7 +76,7 @@ The detail view adapts based on the logged-in user's role.
 #### 3.3.1 All Roles — Attributes Section
 
 - **Location** — dropdown of predefined locations. Includes "Other (specify)" option that reveals a text input. Cannot be blank when status is Deployed. Custom values entered via "Other" are saved automatically for future use (appear in the dropdown as user-contributed entries, visually distinguished from admin-managed entries).
-- **Status** — `user` role can set Onsite or Deployed only. Tech/supervisor/admin status is controlled by workflow buttons.
+- **Status** — `admin` can set any status directly. `user` role can set Onsite or Deployed only. `supervisor` manages status exclusively through the workshop workflow (intake → Disabled, release → Onsite) — no direct status dropdown. `tech` cannot change status at all.
 - **Save Changes** — saves location and allowed status changes. Writes audit log entry.
 - **Service History** — full timestamped log of all services performed on this asset, visible to all roles. Each entry shows: service name, logged by (name + role), timestamp, notes.
 
@@ -93,7 +93,7 @@ The detail view adapts based on the logged-in user's role.
   - Creates a workshop job with status "Flagged"
   - Asset badge changes to orange "Flagged"
   - Asset status does NOT change to Disabled until supervisor formally intakes it
-- **Tech cannot:** change status via dropdown, intake to workshop, release from workshop
+- **Tech cannot:** change status, intake to workshop, release from workshop
 
 #### 3.3.3 Supervisor / Admin — Additional Capabilities
 
@@ -102,6 +102,7 @@ The detail view adapts based on the logged-in user's role.
 - **Intake to Workshop:** Available on any asset, especially Flagged ones. Requires assigning a tech, setting priority (Urgent / Normal / Scheduled). On confirm: creates/updates workshop job (status → Waiting), sets asset status to Disabled, sets location to selected workshop sub-location.
 - **Release from Workshop:** Only available when job status is "Ready for Release." On confirm: closes job, sets asset status to Onsite, prompts for new location.
 - **Downtime indicator:** If asset has been Disabled for more than the configured threshold (default 5 days, configurable by admin), show: "⚠ Disabled for X days"
+- **Supervisor cannot:** change asset status directly via dropdown. Status is driven entirely by the workshop workflow (intake and release actions).
 
 ---
 
@@ -529,6 +530,11 @@ Key design notes:
 **G-06: Supervisor cannot access admin user management**
 - Role: supervisor → navigate to admin user management
 - Expected: Redirect to dashboard.
+
+**G-07: Supervisor cannot change asset status directly**
+- Role: supervisor → open any asset detail
+- Expected: No Status dropdown visible. Status shown as read-only badge.
+- API check: `PATCH /api/assets/:id/state` with `{ status: 'Disabled' }` using supervisor JWT → HTTP 403 Forbidden.
 
 ---
 
