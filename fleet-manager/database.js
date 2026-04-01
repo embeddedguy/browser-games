@@ -265,6 +265,78 @@ function seedIfEmpty() {
     });
     console.log('  ✓ 20 sample assets seeded');
   }
+
+  // Service log history — realistic demo data
+  if (!db.prepare('SELECT 1 FROM service_log LIMIT 1').get()) {
+    const assets   = db.prepare('SELECT id FROM assets').all();
+    const services = db.prepare('SELECT id, name FROM services').all();
+
+    const techStaff = [
+      { name: 'James Wilson',   role: 'Technician' },
+      { name: 'Maria Chen',     role: 'Technician' },
+      { name: 'Derek Okafor',   role: 'Technician' },
+      { name: 'Priya Nair',     role: 'Technician' },
+      { name: 'Luke Patterson', role: 'Supervisor' },
+      { name: 'Sandra Briggs',  role: 'Supervisor' },
+    ];
+
+    const notesByService = {
+      'Oil & Filter Change':                 ['Routine PM', 'Overdue by 2 weeks — completed', 'Changed filter and topped up oil'],
+      'Air Filter Replacement':              ['Heavy dust buildup noted', 'Replaced — filter was clogged', 'Routine replacement'],
+      'Fuel Filter Replacement':             ['Routine PM', 'Slight contamination in old filter', null],
+      'Hydraulic Oil & Filter Change':       ['Changed both filters and flushed system', 'Oil was discoloured — replaced', 'Routine PM'],
+      'Coolant Flush & Fill':                ['Antifreeze levels were low', 'Routine flush', null],
+      'Battery Inspection & Replacement':    ['Battery load-tested OK', 'Replaced — failed load test', 'Cleaned terminals and tested'],
+      'Tire Inspection & Rotation':          ['All tyres within spec', 'Front tyres showing uneven wear — rotated', 'Tyre pressure adjusted'],
+      'Brake Inspection & Service':          ['Pads at 40% — no action', 'Rear pads replaced', 'Adjusted rear drums'],
+      'Engine Tune-Up':                      ['Full tune-up — spark plugs, belts checked', 'Replaced spark plugs', null],
+      'Transmission Service':                ['Fluid changed and filter cleaned', 'Routine service', null],
+      'Drive Belt Replacement':              ['Belt showing cracking — replaced', 'Preventive replacement', null],
+      'Undercarriage Inspection & Cleaning': ['Heavy mud buildup cleaned', 'Track pins showing wear — noted for next service', 'No issues found'],
+      'Greasing & Lubrication':              ['All grease points completed', 'Routine lubrication', '15 grease points serviced'],
+      'Track Tension Adjustment':            ['Tension was loose — adjusted to spec', 'Routine check — no adjustment needed', null],
+      'Bucket/Attachment Inspection':        ['Cutting edge at 60% — within limits', 'Teeth replaced on bucket', 'No cracks or damage found'],
+      'Electrical System Diagnosis & Repair':['Traced short in cab lighting — repaired', 'Warning light reset after sensor replacement', null],
+      'Pre-Delivery Inspection (PDI)':       ['Full PDI completed — ready for deployment', null, null],
+      'Annual Safety Inspection':            ['Passed — certificate issued', 'Minor items noted and rectified before passing', null],
+      'Welding & Structural Repair':         ['Repaired cracked boom bracket', 'Welded undercarriage frame crack', null],
+      'Emissions Test & Service':            ['Passed emissions test', 'Adjusted fuel mixture — passed on second attempt', null],
+    };
+
+    function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function daysAgoISO(days) {
+      return new Date(Date.now() - days * 86400000).toISOString();
+    }
+
+    const insertLog = db.prepare(`
+      INSERT INTO service_log
+        (id, asset_id, workshop_job_id, service_id, service_name,
+         logged_by_id, logged_by_name, logged_by_role, timestamp, notes)
+      VALUES (?, ?, NULL, ?, ?, NULL, ?, ?, ?, ?)
+    `);
+
+    let totalLogs = 0;
+    assets.forEach(asset => {
+      const count = rand(10, 20);
+      // Spread entries across the past 2 years, sorted oldest-first
+      const daysOffsets = Array.from({ length: count }, () => rand(1, 730)).sort((a, b) => b - a);
+
+      daysOffsets.forEach(daysAgo => {
+        const svc    = pick(services);
+        const person = pick(techStaff);
+        const notes  = notesByService[svc.name] ? pick(notesByService[svc.name]) : null;
+        insertLog.run(
+          genId(), asset.id, svc.id, svc.name,
+          person.name, person.role,
+          daysAgoISO(daysAgo),
+          notes
+        );
+        totalLogs++;
+      });
+    });
+    console.log(`  ✓ ${totalLogs} service log entries seeded across 20 assets`);
+  }
 }
 
 module.exports = { db, genId, nowISO, hashPassword, verifyPassword, writeAudit, locationDisplay, seedIfEmpty };
