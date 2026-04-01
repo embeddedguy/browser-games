@@ -116,10 +116,14 @@ router.patch('/:id/state', (req, res) => {
 
   const { locationId, customLocation, status } = req.body;
 
-  // Role check: only user/admin/supervisor can change status; tech cannot set status directly
+  // Role check for direct status changes:
+  //   admin  → any status
+  //   user   → Onsite or Deployed only
+  //   tech   → cannot change status (use flag workflow)
+  //   supervisor → cannot change status directly (use workshop intake/release workflow)
   const role = req.user.role;
-  if (role === 'tech' && status) {
-    return res.status(403).json({ error: 'Technicians cannot change asset status directly' });
+  if ((role === 'tech' || role === 'supervisor') && status) {
+    return res.status(403).json({ error: 'Status can only be changed directly by an admin. Supervisors manage status through the workshop workflow.' });
   }
   if (role === 'user' && status && !['Onsite','Deployed'].includes(status)) {
     return res.status(403).json({ error: 'Users can only set status to Onsite or Deployed' });

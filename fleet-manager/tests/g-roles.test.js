@@ -112,6 +112,24 @@ describe('GROUP G — Role Isolation', () => {
     expect(res.status).toBe(403);
   });
 
+  test('G supervisor: supervisor cannot change status directly → 403', async () => {
+    for (const status of ['Disabled', 'Onsite', 'Deployed']) {
+      const res = await request(app)
+        .patch(`/api/assets/${assetId}/state`)
+        .set('Authorization', `Bearer ${supervisorToken}`)
+        .send({ status });
+      expect(res.status).toBe(403);
+    }
+  });
+
+  test('G admin: admin CAN change status directly', async () => {
+    const res = await request(app)
+      .patch(`/api/assets/${assetId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'Onsite' });
+    expect(res.status).toBe(200);
+  });
+
   test('G-02d: user token on GET /api/reports/dashboard → 403', async () => {
     const res = await request(app)
       .get('/api/reports/dashboard')

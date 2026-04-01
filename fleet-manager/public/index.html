@@ -605,8 +605,8 @@ async function renderAssetDetail({ assetId }) {
     }
     locOpts += '<option value="__other__">Other (specify)…</option>';
 
-    // Status options
-    const canSetStatus = hasRole('user','supervisor','admin');
+    // Status options — supervisor manages status via workshop workflow, not directly
+    const canSetStatus = hasRole('user','admin');
     const allowedStatuses = user.role === 'user' ? ['Onsite','Deployed'] : ['Onsite','Deployed','Disabled'];
     const statusOpts = allowedStatuses.map(s => `<option value="${s}" ${st.status===s?'selected':''}>${s}</option>`).join('');
 
