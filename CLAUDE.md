@@ -28,6 +28,19 @@ Each game is a single self-contained `.html` file with inline CSS and JavaScript
 - AI uses full minimax (unbeatable) — `bestMove()` calls `minimax()` recursively.
 - Score persists across rounds within a session (page reload resets it).
 
+## Sales Playbook Commands
+
+The `coldEmail/` folder contains a private sales strategy (gitignored — never commit or push its contents).
+
+| Command | What it does |
+|---------|-------------|
+| `run signal scan` | Searches web for hiring + funding signals → writes `coldEmail/weekly_brief.md` |
+| `run metrics summary` | Reads `coldEmail/metrics.md` → writes `coldEmail/weekly_metrics_summary.md` |
+
+Full prompt definitions are in `coldEmail/prompts/`. Do not push `coldEmail/` to GitHub.
+
+---
+
 ### shooter.html — "Dead Zone"
 - Canvas-based top-down shooter (`480×480`, scaled 2× via CSS).
 - Game loop driven by `requestAnimationFrame`; delta time capped at `MAX_DELTA` (50ms) to prevent tunneling on tab switch.
