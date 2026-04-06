@@ -36,6 +36,7 @@ The `coldEmail/` folder contains a private sales strategy (gitignored — never 
 |---------|-------------|
 | `run signal scan` | Searches web for hiring + funding signals → writes `coldEmail/weekly_brief.md` |
 | `run metrics summary` | Reads `coldEmail/metrics.md` → writes `coldEmail/weekly_metrics_summary.md` |
+| `run framework refinement` | Monthly recursive improvement cycle → reads 4 weeks of metrics → writes `coldEmail/proposals/YYYY-MM-refinements.md` for Sales Leader review |
 
 Full prompt definitions are in `coldEmail/prompts/`. Do not push `coldEmail/` to GitHub.
 
