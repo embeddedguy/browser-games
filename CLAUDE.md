@@ -40,6 +40,8 @@ The `coldEmail/` folder contains a private sales strategy (gitignored — never 
 
 Full prompt definitions are in `coldEmail/prompts/`. Do not push `coldEmail/` to GitHub.
 
+**Timestamp rule:** Any time Claude writes to or edits a file in `coldEmail/`, update that file's `Last updated: YYYY-MM-DD HH:MM` header line to the current date and time (24-hour format).
+
 ---
 
 ### shooter.html — "Dead Zone"
