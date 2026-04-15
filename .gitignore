@@ -10,3 +10,7 @@ Thumbs.db
 
 # Private — sales strategy (do not push to public repo)
 coldEmail/
+
+# Private — expense reporting system
+ExpenseReports/
+"WorkoutTracker/node_modules/" 
